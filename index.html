@@ -69,13 +69,16 @@
     .zoom-btn:hover {
       background: #f0f0f0;
     }
-    /* Авторские права */
+    /* Авторские права + кнопки */
     #copyright {
       position: absolute;
       top: 18px;
       left: 160px;
       z-index: 1000;
       font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     #copyright span {
       display: inline-block;
@@ -89,6 +92,69 @@
          1px -1px 0 #888,
         -1px  1px 0 #888,
          1px  1px 0 #888;
+    }
+    #copyright button {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0,0,0,0.3);
+      font-size: 20px;
+      color: #333;
+      padding: 0;
+      margin: 0;
+      font-weight: bold;
+      line-height: 1;
+    }
+    #copyright button:hover {
+      background: #f0f0f0;
+    }
+    #undo-btn {
+      font-size: 24px;
+      display: none;
+    }
+    /* Всплывающая панель поиска */
+    #search-panel {
+      position: absolute;
+      top: 58px;
+      left: 160px; /* выравнивание по левому краю #copyright */
+      width: 220px;
+      display: none;
+      z-index: 1003;
+    }
+    #search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid #aaa;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: Calibri, Arial, sans-serif;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #search-results {
+      max-height: 200px;
+      overflow-y: auto;
+      background: white;
+      border: 2px solid #aaa;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      display: none;
+    }
+    .search-result-item {
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: Calibri, Arial, sans-serif;
+      border-bottom: 1px solid #eee;
+    }
+    .search-result-item:hover {
+      background-color: #f0f8ff;
     }
     /* Выпадающее меню */
     #dropdown-menu {
@@ -280,78 +346,6 @@
       background-color: #f0f0f0;
       border-radius: 3px;
     }
-    /* === Верхние правые кнопки: Undo + Поиск === */
-    #top-right-controls {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      display: flex;
-      gap: 8px;
-      z-index: 1002;
-    }
-    #top-right-controls button {
-      width: 40px;
-      height: 40px;
-      background: white;
-      border: 2px solid #ccc;
-      border-radius: 6px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      box-shadow: 0 0 8px rgba(0,0,0,0.3);
-      font-size: 20px;
-      color: #333;
-      padding: 0;
-      margin: 0;
-      font-weight: bold;
-      line-height: 1;
-    }
-    #top-right-controls button:hover {
-      background: #f0f0f0;
-    }
-    #undo-btn {
-      font-size: 24px;
-      display: none;
-    }
-    /* Всплывающая панель поиска */
-    #search-panel {
-      position: absolute;
-      top: 58px;
-      right: 12px;
-      width: 220px;
-      display: none;
-      z-index: 1003;
-    }
-    #search-input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 2px solid #aaa;
-      border-radius: 4px;
-      font-size: 14px;
-      font-family: Calibri, Arial, sans-serif;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    #search-results {
-      max-height: 200px;
-      overflow-y: auto;
-      background: white;
-      border: 2px solid #aaa;
-      border-top: none;
-      border-radius: 0 0 6px 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      display: none;
-    }
-    .search-result-item {
-      padding: 6px 12px;
-      cursor: pointer;
-      font-size: 14px;
-      font-family: Calibri, Arial, sans-serif;
-      border-bottom: 1px solid #eee;
-    }
-    .search-result-item:hover {
-      background-color: #f0f8ff;
-    }
   </style>
 </head>
 <body>
@@ -366,6 +360,12 @@
 </div>
 <div id="copyright">
   <span>© by Alex Donor</span>
+  <button id="undo-btn" title="Отменить последнюю точку">↩️</button>
+  <button id="search-btn">🔍</button>
+</div>
+<div id="search-panel">
+  <input type="text" id="search-input" placeholder="Поиск точек...">
+  <div id="search-results"></div>
 </div>
 <div id="dropdown-menu">
   <div class="menu-section">
@@ -393,14 +393,6 @@
   </div>
 </div>
 <button id="clear-route-btn">🗑️ Очистить маршрут</button>
-<div id="top-right-controls">
-  <button id="undo-btn" title="Отменить последнюю точку">↩️</button>
-  <button id="search-btn">🔍</button>
-</div>
-<div id="search-panel">
-  <input type="text" id="search-input" placeholder="Поиск точек...">
-  <div id="search-results"></div>
-</div>
 <div id="map"></div>
 <div id="status">Загрузка карты...</div>
 <div id="loading-overlay">
@@ -443,7 +435,6 @@
     </div>
   </div>
 </div>
-
 <!-- Leaflet из CDN -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -453,14 +444,12 @@
     maxZoom: 4,
     zoomControl: false
   });
-
   document.getElementById('zoom-in').addEventListener('click', () => {
     if (map.getZoom() < map.getMaxZoom()) map.zoomIn();
   });
   document.getElementById('zoom-out').addEventListener('click', () => {
     if (map.getZoom() > map.getMinZoom()) map.zoomOut();
   });
-
   function distToSegment(p, v, w) {
     const dx = w[0] - v[0];
     const dy = w[1] - v[1];
@@ -470,7 +459,6 @@
     t = Math.max(0, Math.min(1, t));
     return Math.hypot(p[0] - (v[0] + t * dx), p[1] - (v[1] + t * dy));
   }
-
   let segments = [];
   let graph = {};
   let selectedPoints = [];
@@ -485,7 +473,6 @@
   let currentRoutePointsPopup = null;
   window.temporaryHighlightMarker = null;
   const CURSOR_TOLERANCE_PX = 1;
-
   function createLabelMarker(latlng, text, className, offsetX, offsetY) {
     const div = document.createElement('div');
     div.className = className;
@@ -502,7 +489,6 @@
       zIndexOffset: 1000
     });
   }
-
   function toggleRouteLabels() {
     const zoom = map.getZoom();
     const shouldShow = zoom >= 2;
@@ -515,7 +501,6 @@
     });
   }
   map.on('zoomend', toggleRouteLabels);
-
   function handleMouseMove(e) {
     const container = map.getContainer();
     container.classList.remove('clickable');
@@ -532,7 +517,6 @@
     }
   }
   map.on('mousemove', handleMouseMove);
-
   function updateUndoButtonVisibility() {
     const undoBtn = document.getElementById('undo-btn');
     if (selectedPoints.length > 0) {
@@ -541,7 +525,6 @@
       undoBtn.style.display = 'none';
     }
   }
-
   function clearRoute() {
     if (routeLayer) map.removeLayer(routeLayer);
     pointMarkers.forEach(marker => map.removeLayer(marker));
@@ -568,7 +551,6 @@
     document.getElementById('show-route-points-btn').textContent = '📍';
     updateUndoButtonVisibility();
   }
-
   function dijkstra(graph, start, end) {
     if (start === end) {
       return [start.split(',').map(Number)];
@@ -612,7 +594,6 @@
     }
     return path.length > 0 ? path : null;
   }
-
   function findPointsNearRoute(routeCoords, pointsGeoJson, maxDistance = 2.5) {
     const segments = [];
     let totalLength = 0;
@@ -661,7 +642,6 @@
     nearbyPoints.sort((a, b) => a.alongDist - b.alongDist);
     return nearbyPoints.map(p => ({ name: p.name, coords: p.coords }));
   }
-
   async function loadPointsGeoJson() {
     try {
       const response = await fetch('data/points.geojson');
@@ -673,7 +653,6 @@
       return { features: [] };
     }
   }
-
   async function buildFullRoute() {
     if (selectedPoints.length < 2) return;
     if (currentRoutePointsPopup) {
@@ -685,14 +664,12 @@
     routePointMarkers.forEach(m => map.removeLayer(m));
     routePointMarkers = [];
     document.getElementById('loading-overlay').style.display = 'flex';
-
     setTimeout(async () => {
       if (routeLayer) map.removeLayer(routeLayer);
       routeLayer = null;
       const fullPath = [];
       let totalDistance = 0;
       let valid = true;
-
       for (let i = 0; i < selectedPoints.length - 1; i++) {
         const start = selectedPoints[i];
         const end = selectedPoints[i + 1];
@@ -719,22 +696,17 @@
           totalDistance += Math.hypot(a[0] - b[0], a[1] - b[1]);
         }
       }
-
       document.getElementById('loading-overlay').style.display = 'none';
-
       if (!valid) {
         document.getElementById('status').textContent = 'Не удалось построить маршрут';
         return;
       }
-
       routeLayer = L.polyline(fullPath.map(p => [p[1], p[0]]), {
         color: 'red',
         weight: 4
       }).addTo(map);
-
       document.getElementById('status').innerHTML =
         `Маршрут: <span class="route-distance">${totalDistance.toFixed(1)} м</span> (точек: ${selectedPoints.length})`;
-
       try {
         const pointsGeoJson = await loadPointsGeoJson();
         const nearbyPoints = findPointsNearRoute(fullPath, pointsGeoJson, 2.5);
@@ -758,7 +730,6 @@
           routeLabelMarkers.push(label);
         });
         toggleRouteLabels();
-
         if (nearbyPoints.length > 0) {
           const listHtml = nearbyPoints.map((p, idx) =>
             `<div class="route-point-item" data-lng="${p.coords[0]}" data-lat="${p.coords[1]}">• ${p.name}</div>`
@@ -828,7 +799,6 @@
       }
     }, 10);
   }
-
   map.on('click', async function(e) {
     if (menuOpen || segments.length === 0) return;
     const click = [e.latlng.lng, e.latlng.lat];
@@ -879,7 +849,6 @@
     }
     updateUndoButtonVisibility();
   });
-
   const menuButton = document.getElementById('menu-button');
   const dropdownMenu = document.getElementById('dropdown-menu');
   menuButton.addEventListener('click', (e) => {
@@ -896,16 +865,13 @@
   dropdownMenu.addEventListener('click', (e) => {
     e.stopPropagation();
   });
-
   document.getElementById('clear-route-btn').addEventListener('click', clearRoute);
-
   document.getElementById('background-select').addEventListener('change', function(e) {
     if (mapBounds) {
       if (currentImageOverlay) map.removeLayer(currentImageOverlay);
       currentImageOverlay = L.imageOverlay(e.target.value, mapBounds, { opacity: 1 }).addTo(map);
     }
   });
-
   document.getElementById('save-route').addEventListener('click', () => {
     if (selectedPoints.length < 2) {
       alert('Нет маршрута для сохранения (нужно минимум 2 точки)');
@@ -927,11 +893,9 @@
     menuOpen = false;
     dropdownMenu.classList.remove('active');
   });
-
   document.getElementById('load-route').addEventListener('click', () => {
     document.getElementById('file-input').click();
   });
-
   document.getElementById('file-input').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -977,7 +941,6 @@
     };
     reader.readAsText(file);
   });
-
   document.getElementById('show-route-points-btn').addEventListener('click', async () => {
     if (currentRoutePointsPopup) {
       currentRoutePointsPopup.remove();
@@ -1051,9 +1014,7 @@
       }
     }
   });
-
   let allPointsGeoJson = null;
-
   async function performSearch(query) {
     const resultsContainer = document.getElementById('search-results');
     resultsContainer.innerHTML = '';
@@ -1122,7 +1083,6 @@
     });
     resultsContainer.style.display = 'block';
   }
-
   document.addEventListener('DOMContentLoaded', () => {
     const searchBtn = document.getElementById('search-btn');
     const searchInput = document.getElementById('search-input');
@@ -1155,23 +1115,19 @@
       }
     });
   });
-
   document.getElementById('show-disclaimer').addEventListener('click', () => {
     document.getElementById('disclaimer-overlay').style.display = 'flex';
     menuOpen = false;
     dropdownMenu.classList.remove('active');
   });
-
   document.getElementById('close-disclaimer').addEventListener('click', () => {
     document.getElementById('disclaimer-overlay').style.display = 'none';
   });
-
   document.getElementById('disclaimer-overlay').addEventListener('click', (e) => {
     if (e.target.id === 'disclaimer-overlay') {
       document.getElementById('disclaimer-overlay').style.display = 'none';
     }
   });
-
   function undoLastPoint() {
     if (selectedPoints.length === 0) return;
     selectedPoints.pop();
@@ -1220,30 +1176,25 @@
     }
     updateUndoButtonVisibility();
   }
-
   document.getElementById('undo-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     undoLastPoint();
   });
-
   // === ИНИЦИАЛИЗАЦИЯ: загрузка графа маршрутов ===
   (async () => {
     try {
       const response = await fetch('data/routes.geojson');
       if (!response.ok) throw new Error('Не удалось загрузить routes.geojson');
       const data = await response.json();
-
       const allCoords = [];
       segments = [];
       graph = {};
-
       data.features.forEach(f => {
         if (!f.geometry) return;
         let lines = [];
         if (f.geometry.type === 'LineString') lines = [f.geometry.coordinates];
         else if (f.geometry.type === 'MultiLineString') lines = f.geometry.coordinates;
         else return;
-
         const weight = f.properties?.weight ?? 3;
         lines.forEach(coords => {
           if (coords.length < 2) return;
@@ -1270,7 +1221,6 @@
           }
         });
       });
-
       if (allCoords.length === 0) {
         document.getElementById('status').textContent = 'GeoJSON не содержит координат';
       } else {
