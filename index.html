@@ -318,7 +318,7 @@
       background-color: #f0f0f0;
       border-radius: 3px;
     }
-    /* === Верхние правые кнопки: Undo + Поиск === */
+    /* === Верхние правые кнопки: Легенда + Undo + Поиск === */
     #top-right-controls {
       position: absolute;
       top: 12px;
@@ -348,9 +348,45 @@
     #top-right-controls button:hover {
       background: #f0f0f0;
     }
+    #legend-btn {
+      font-size: 18px;
+    }
     #undo-btn {
       font-size: 24px;
       display: none;
+    }
+    /* Панель легенды */
+    #legend-panel {
+      position: absolute;
+      top: 58px;
+      right: 12px;
+      width: 220px;
+      background: white;
+      border: 2px solid #aaa;
+      border-radius: 6px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 1003;
+      display: none;
+      font-family: Calibri, Arial, sans-serif;
+    }
+    #legend-panel h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #222;
+      text-align: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .legend-color {
+      width: 20px;
+      height: 8px;
+      margin-right: 8px;
+      border-radius: 2px;
     }
     /* Всплывающая панель поиска */
     #search-panel {
@@ -420,6 +456,21 @@
       z-index: 700 !important;
     }
   </style>
+  
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+  	(function(m,e,t,r,i,k,a){
+  		m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+		m[i].l=1*new Date();
+		for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+		k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+	})(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=105491546', 'ym');
+
+		ym(105491546, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/105491546" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
+
 </head>
 <body>
 <div id="menu-button">
@@ -464,8 +515,28 @@
 </div>
 <button id="clear-route-btn">🗑️ Очистить маршрут</button>
 <div id="top-right-controls">
+  <button id="legend-btn" title="Легенда маршрута">ℹ️</button>
   <button id="undo-btn" title="Отменить последнюю точку">↩️</button>
   <button id="search-btn">🔍</button>
+</div>
+<div id="legend-panel">
+  <h3>Типы проходов</h3>
+  <div class="legend-item">
+    <div class="legend-color" style="background-color: #00FF00;"></div>
+    <span>Свободный проход</span>
+  </div>
+   <div class="legend-item">
+    <div class="legend-color" style="background-color: #FFA500;"></div>
+    <span>Проход с препятствием</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background-color: #FF0000;"></div>
+    <span>Шкуродер</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background-color: #0000FF;"></div>
+    <span>Обводненный штрек</span>
+  </div>
 </div>
 <div id="search-panel">
   <input type="text" id="search-input" placeholder="Поиск точек...">
@@ -548,7 +619,8 @@
       '#zoom-control .zoom-btn',
       '#clear-route-btn',
       '#undo-btn',
-      '#search-btn'
+      '#search-btn',
+      '#legend-btn'
     ];
     
     elements.forEach(selector => {
@@ -600,7 +672,7 @@
                 coordinates: [[100, 100], [500, 100], [500, 500], [100, 500], [100, 100]]
               },
               properties: {
-                weight: 3
+                weight: 5
               }
             }
           ]
@@ -692,6 +764,7 @@
     return Math.hypot(p[0] - (v[0] + t * dx), p[1] - (v[1] + t * dy));
   }
 
+  // segments теперь содержит массивы [start, end, weight]
   let segments = [];
   let graph = {};
   let selectedPoints = [];
@@ -893,9 +966,26 @@
     const p1 = map.containerPointToLayerPoint([0, 0]);
     const p2 = map.containerPointToLayerPoint([CURSOR_TOLERANCE_PX, 0]);
     const tolerance = Math.abs(p2.x - p1.x);
+    
     for (let i = 0; i < segments.length; i++) {
+      // segments[i] теперь содержит [start, end, weight]
       if (distToSegment(mouse, segments[i][0], segments[i][1]) <= tolerance) {
         container.classList.add('clickable');
+        
+        // Можно добавить всплывающую подсказку с информацией о типе прохода
+        const weight = segments[i][2];
+        let typeName;
+        switch(weight) {
+          case 1: typeName = "Завал (непроходимо)"; break;
+          case 2: typeName = "Шкуродер"; break;
+          case 3: typeName = "Проход с препятствием"; break;
+          case 4: typeName = "Обводненный штрек"; break;
+          case 5: typeName = "Свободный проход"; break;
+          default: typeName = "Свободный проход";
+        }
+        
+        // Временная подсказка (опционально)
+        // console.log(`Тип прохода: ${typeName}`);
         return;
       }
     }
@@ -1115,12 +1205,52 @@
             return;
         }
         
-        // Создаем маршрут
-        routeLayer = L.polyline(fullPath.map(p => [p[1], p[0]]), {
-            color: 'red',
-            weight: 4,
-            pane: 'routes'
-        }).addTo(map);
+        // Создаем сегменты маршрута с разными цветами
+        const routeSegments = [];
+        for (let i = 0; i < fullPath.length - 1; i++) {
+            const start = fullPath[i];
+            const end = fullPath[i + 1];
+            
+            // Находим соответствующий сегмент в исходных данных
+            let segmentWeight = 5; // По умолчанию свободный проход
+            
+            for (const seg of segments) {
+                if ((seg[0][0] === start[0] && seg[0][1] === start[1] && seg[1][0] === end[0] && seg[1][1] === end[1]) ||
+                    (seg[0][0] === end[0] && seg[0][1] === end[1] && seg[1][0] === start[0] && seg[1][1] === start[1])) {
+                    segmentWeight = seg[2];
+                    break;
+                }
+            }
+            
+            let color;
+            switch(segmentWeight) {
+                case 1:
+                    color = '#000000'; // Черный - завал
+                    break;
+                case 2:
+                    color = '#FF0000'; // Ярко-красный - шкуродер
+                    break;
+                case 3:
+                    color = '#FFA500'; // Оранжевый - проход с препятствием
+                    break;
+                case 4:
+                    color = '#0000FF'; // Синий - обводненный штрек
+                    break;
+                case 5:
+                default:
+                    color = '#00FF00'; // Зеленый - свободный проход
+            }
+            
+            routeSegments.push(L.polyline([[start[1], start[0]], [end[1], end[0]]], {
+                color: color,
+                weight: 6,
+                opacity: 0.8,
+                pane: 'routes'
+            }));
+        }
+
+        // Создаем группу для всех сегментов маршрута
+        routeLayer = L.layerGroup(routeSegments).addTo(map);
         
         document.getElementById('status').innerHTML =
             `Маршрут: <span class="route-distance">${totalDistance.toFixed(1)} м</span> (точек: ${selectedPoints.length})`;
@@ -1410,7 +1540,16 @@
       try {
         const pointsGeoJsonText = await Android.loadPointsGeoJson();
         const pointsGeoJson = JSON.parse(pointsGeoJsonText);
-        const coords = routeLayer ? routeLayer.getLatLngs().map(ll => [ll.lng, ll.lat]) : [];
+        const coords = [];
+        if (routeLayer && routeLayer.getLayers) {
+          routeLayer.getLayers().forEach(layer => {
+            const latlngs = layer.getLatLngs();
+            if (latlngs.length >= 2) {
+              coords.push([latlngs[0].lng, latlngs[0].lat]);
+              coords.push([latlngs[1].lng, latlngs[1].lat]);
+            }
+          });
+        }
         const nearbyPoints = findPointsNearRoute(coords, pointsGeoJson, 2.5);
         if (nearbyPoints.length > 0) {
           const listHtml = nearbyPoints.map((p, idx) => {
@@ -1591,6 +1730,25 @@
     });
   });
 
+  // Легенда
+  document.getElementById('legend-btn').addEventListener('click', () => {
+    const legendPanel = document.getElementById('legend-panel');
+    const isVisible = legendPanel.style.display === 'block';
+    if (!isVisible) {
+      legendPanel.style.display = 'block';
+    } else {
+      legendPanel.style.display = 'none';
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const legendPanel = document.getElementById('legend-panel');
+    const legendBtn = document.getElementById('legend-btn');
+    if (!legendPanel.contains(e.target) && e.target !== legendBtn) {
+      legendPanel.style.display = 'none';
+    }
+  });
+
   document.getElementById('show-disclaimer').addEventListener('click', () => {
     document.getElementById('disclaimer-overlay').style.display = 'flex';
     menuOpen = false;
@@ -1687,7 +1845,7 @@
         else if (f.geometry.type === 'MultiLineString') lines = f.geometry.coordinates;
         else return;
         
-        const weight = f.properties?.weight ?? 3;
+        const weight = f.properties?.weight ?? 5; // По умолчанию свободный проход
         console.log(`Обрабатываем линию с weight: ${weight}`);
         
         lines.forEach(coords => {
@@ -1696,18 +1854,25 @@
           for (let i = 0; i < coords.length - 1; i++) {
             const a = coords[i];
             const b = coords[i + 1];
-            segments.push([a, b]);
+            segments.push([a, b, weight]); // Добавляем вес в сегмент
             const keyA = a.join(',');
             const keyB = b.join(',');
             const baseLength = Math.hypot(a[0] - b[0], a[1] - b[1]);
             let cost;
+            
+            // Новые веса согласно требованиям:
             if (weight === 1) {
-              cost = Infinity;
+              cost = Infinity; // Завал - непроходимо
             } else if (weight === 2) {
-              cost = baseLength * 3;
+              cost = baseLength * 3; // Шкуродер - очень высокая стоимость
+            } else if (weight === 3) {
+              cost = baseLength * 1.5; // Проход с препятствием - высокая стоимость
+            } else if (weight === 4) {
+              cost = baseLength * 5; // Обводненный штрек - средняя стоимость
             } else {
-              cost = baseLength;
+              cost = baseLength; // Свободный проход (5 или null/пустое)
             }
+            
             if (!graph[keyA]) graph[keyA] = {};
             if (!graph[keyB]) graph[keyB] = {};
             graph[keyA][keyB] = cost;
