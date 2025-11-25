@@ -590,6 +590,18 @@
   let routesGeoJsonData = null;
   let isBuildingRoute = false;
   
+  // КОНСТАНТА КАЛИБРОВКИ МАСШТАБА
+  // На основе ваших измерений: 84м в QGIS = 145.9px в приложении
+  const SCALE_CORRECTION = 84 / 145.9; // ≈ 0.5757
+
+  // Функция для расчета реального расстояния в метрах
+  function calculateRealDistance(coord1, coord2) {
+    const dx = coord1[0] - coord2[0];
+    const dy = coord1[1] - coord2[1];
+    const pixelDistance = Math.sqrt(dx * dx + dy * dy);
+    return pixelDistance * SCALE_CORRECTION;
+  }
+
   // Функция проверки существования изображения
   function checkImageExists(url, callback) {
     const img = new Image();
@@ -758,10 +770,11 @@
     const dx = w[0] - v[0];
     const dy = w[1] - v[1];
     const l2 = dx * dx + dy * dy;
-    if (l2 === 0) return Math.hypot(p[0] - v[0], p[1] - v[1]);
+    if (l2 === 0) return calculateRealDistance(p, v);
     let t = ((p[0] - v[0]) * dx + (p[1] - v[1]) * dy) / l2;
     t = Math.max(0, Math.min(1, t));
-    return Math.hypot(p[0] - (v[0] + t * dx), p[1] - (v[1] + t * dy));
+    const proj = [v[0] + t * dx, v[1] + t * dy];
+    return calculateRealDistance(p, proj);
   }
 
   // segments теперь содержит массивы [start, end, weight]
@@ -965,27 +978,11 @@
     const mouse = [e.latlng.lng, e.latlng.lat];
     const p1 = map.containerPointToLayerPoint([0, 0]);
     const p2 = map.containerPointToLayerPoint([CURSOR_TOLERANCE_PX, 0]);
-    const tolerance = Math.abs(p2.x - p1.x);
+    const tolerance = Math.abs(p2.x - p1.x) * SCALE_CORRECTION;
     
     for (let i = 0; i < segments.length; i++) {
-      // segments[i] теперь содержит [start, end, weight]
       if (distToSegment(mouse, segments[i][0], segments[i][1]) <= tolerance) {
         container.classList.add('clickable');
-        
-        // Можно добавить всплывающую подсказку с информацией о типе прохода
-        const weight = segments[i][2];
-        let typeName;
-        switch(weight) {
-          case 1: typeName = "Завал (непроходимо)"; break;
-          case 2: typeName = "Шкуродер"; break;
-          case 3: typeName = "Проход с препятствием"; break;
-          case 4: typeName = "Обводненный штрек"; break;
-          case 5: typeName = "Свободный проход"; break;
-          default: typeName = "Свободный проход";
-        }
-        
-        // Временная подсказка (опционально)
-        // console.log(`Тип прохода: ${typeName}`);
         return;
       }
     }
@@ -1085,7 +1082,7 @@
     for (let i = 0; i < routeCoords.length - 1; i++) {
       const a = routeCoords[i];
       const b = routeCoords[i + 1];
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const len = calculateRealDistance(a, b);
       segments.push({ start: a, end: b, length: len, startDist: totalLength });
       totalLength += len;
     }
@@ -1115,17 +1112,17 @@
         
         let dist;
         if (l2 === 0) {
-          dist = Math.hypot(pt[0] - start[0], pt[1] - start[1]);
+          dist = calculateRealDistance(pt, start);
         } else {
           const t = Math.max(0, Math.min(1, ((pt[0] - start[0]) * dx + (pt[1] - start[1]) * dy) / l2));
           const projX = start[0] + t * dx;
           const projY = start[1] + t * dy;
-          dist = Math.hypot(pt[0] - projX, pt[1] - projY);
+          dist = calculateRealDistance(pt, [projX, projY]);
         }
         
         if (dist <= maxDistance) {
           const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((pt[0] - start[0]) * dx + (pt[1] - start[1]) * dy) / l2));
-          const alongDist = seg.startDist + t * Math.sqrt(l2);
+          const alongDist = seg.startDist + t * Math.sqrt(l2) * SCALE_CORRECTION;
           nearbyPoints.push({ name, coords: pt, alongDist });
           addedPointKeys.add(pointKey);
         }
@@ -1193,10 +1190,11 @@
                 fullPath.push(...segmentPath);
             }
             
+            // ИСПРАВЛЕННЫЙ РАСЧЕТ РАССТОЯНИЯ
             for (let j = 1; j < segmentPath.length; j++) {
                 const a = segmentPath[j - 1];
                 const b = segmentPath[j];
-                totalDistance += Math.hypot(a[0] - b[0], a[1] - b[1]);
+                totalDistance += calculateRealDistance(a, b);
             }
         }
         
@@ -1375,13 +1373,13 @@
   map.on('click', function(e) {
     if (menuOpen || segments.length === 0 || isBuildingRoute) return;
     const click = [e.latlng.lng, e.latlng.lat];
-    const TOLERANCE = 4;
+    const TOLERANCE = 4 * SCALE_CORRECTION; // Корректируем допуск
     let nearest = null;
     let minDist = Infinity;
     
     for (const node in graph) {
       const [x, y] = node.split(',').map(Number);
-      const d = Math.hypot(x - click[0], y - click[1]);
+      const d = calculateRealDistance([x, y], click);
       if (d < minDist) {
         minDist = d;
         nearest = [x, y];
@@ -1845,7 +1843,7 @@
         else if (f.geometry.type === 'MultiLineString') lines = f.geometry.coordinates;
         else return;
         
-        const weight = f.properties?.weight ?? 5; // По умолчанию свободный проход
+        const weight = f.properties?.weight ?? 5;
         console.log(`Обрабатываем линию с weight: ${weight}`);
         
         lines.forEach(coords => {
@@ -1854,23 +1852,24 @@
           for (let i = 0; i < coords.length - 1; i++) {
             const a = coords[i];
             const b = coords[i + 1];
-            segments.push([a, b, weight]); // Добавляем вес в сегмент
+            segments.push([a, b, weight]);
             const keyA = a.join(',');
             const keyB = b.join(',');
-            const baseLength = Math.hypot(a[0] - b[0], a[1] - b[1]);
+            
+            // ИСПРАВЛЕННЫЙ РАСЧЕТ СТОИМОСТИ С КАЛИБРОВКОЙ
+            const baseLength = calculateRealDistance(a, b);
             let cost;
             
-            // Новые веса согласно требованиям:
             if (weight === 1) {
-              cost = Infinity; // Завал - непроходимо
+              cost = Infinity;
             } else if (weight === 2) {
-              cost = baseLength * 3; // Шкуродер - очень высокая стоимость
+              cost = baseLength * 3;
             } else if (weight === 3) {
-              cost = baseLength * 1.5; // Проход с препятствием - высокая стоимость
+              cost = baseLength * 1.5;
             } else if (weight === 4) {
-              cost = baseLength * 5; // Обводненный штрек - средняя стоимость
+              cost = baseLength * 5;
             } else {
-              cost = baseLength; // Свободный проход (5 или null/пустое)
+              cost = baseLength;
             }
             
             if (!graph[keyA]) graph[keyA] = {};
@@ -1888,14 +1887,12 @@
         console.error("GeoJSON не содержит координат");
         document.getElementById('status').textContent = 'GeoJSON не содержит координат';
         
-        // Создаем тестовые границы
         mapBounds = [
           [0, 0],
           [1000, 1000]
         ];
         map.fitBounds(mapBounds);
         
-        // Пробуем загрузить карту
         currentImageOverlay = L.imageOverlay('maps/byaki.png', mapBounds, { 
           opacity: 1
         }).addTo(map);
@@ -1911,7 +1908,6 @@
         
         map.fitBounds(mapBounds);
         
-        // Пробуем загрузить карту
         currentImageOverlay = L.imageOverlay('maps/byaki.png', mapBounds, { 
           opacity: 1
         }).addTo(map);
@@ -1936,7 +1932,6 @@
       console.error("Критическая ошибка инициализации:", err);
       document.getElementById('status').textContent = 'Ошибка: ' + (err.message || 'неизвестная ошибка');
       
-      // Аварийный режим
       const emergencyBounds = [
         [0, 0],
         [1000, 1000]
