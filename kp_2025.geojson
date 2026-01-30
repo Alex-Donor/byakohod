@@ -1,0 +1,23 @@
+{
+"type": "FeatureCollection",
+"name": "kp_2025",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::3857" } },
+"features": [
+{ "type": "Feature", "properties": { "fid": 1, "Name": "КП 8", "type": "тех. этап", "Name_type": "Белый спелеолог" }, "geometry": { "type": "Point", "coordinates": [ 4252911.328746162354946, 7246534.862025116570294 ] } },
+{ "type": "Feature", "properties": { "fid": 2, "Name": "КП 7", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252834.631902799010277, 7246400.772986054420471 ] } },
+{ "type": "Feature", "properties": { "fid": 3, "Name": "КП 6", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252716.3299251915887, 7246282.723466784693301 ] } },
+{ "type": "Feature", "properties": { "fid": 4, "Name": "КП 10", "type": "тех. этап", "Name_type": "\"Скалка\"" }, "geometry": { "type": "Point", "coordinates": [ 4252609.136114491149783, 7246407.185427856631577 ] } },
+{ "type": "Feature", "properties": { "fid": 5, "Name": "КП 5", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252544.075167225673795, 7246306.496829809620976 ] } },
+{ "type": "Feature", "properties": { "fid": 6, "Name": "КП 4", "type": "тех. этап", "Name_type": "Нить ариадны" }, "geometry": { "type": "Point", "coordinates": [ 4252565.642713533714414, 7246176.424514443613589 ] } },
+{ "type": "Feature", "properties": { "fid": 7, "Name": "КП 1", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252494.492045298218727, 7246097.714087708853185 ] } },
+{ "type": "Feature", "properties": { "fid": 8, "Name": "СТАРТ/ФИНИШ", "type": "тех. этап", "Name_type": "2 кл. - 80 мин; 3 кл. - 120 мин." }, "geometry": { "type": "Point", "coordinates": [ 4252604.330889386124909, 7246153.967584782280028 ] } },
+{ "type": "Feature", "properties": { "fid": 9, "Name": "КП 2", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252740.962406981736422, 7246195.990948207676411 ] } },
+{ "type": "Feature", "properties": { "fid": 10, "Name": "КП 3", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252725.287025383673608, 7246135.624053126201034 ] } },
+{ "type": "Feature", "properties": { "fid": 11, "Name": "КП 18", "type": "тех. этап", "Name_type": "Заплыв на лодках" }, "geometry": { "type": "Point", "coordinates": [ 4252405.320941711775959, 7246660.777129834517837 ] } },
+{ "type": "Feature", "properties": { "fid": 12, "Name": "КП 16", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252562.543768412433565, 7246738.233387072570622 ] } },
+{ "type": "Feature", "properties": { "fid": 13, "Name": "КП 12", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252602.183862384408712, 7246606.667185609228909 ] } },
+{ "type": "Feature", "properties": { "fid": 14, "Name": "КП 14", "type": "кп", "Name_type": null }, "geometry": { "type": "Point", "coordinates": [ 4252766.155232695862651, 7246658.831603751517832 ] } },
+{ "type": "Feature", "properties": { "fid": 15, "Name": "КП 22", "type": "тех. этап", "Name_type": "Транспортировка груза" }, "geometry": { "type": "Point", "coordinates": [ 4252469.675296723842621, 7246003.006920201703906 ] } },
+{ "type": "Feature", "properties": { "fid": 16, "Name": "КП 20", "type": "тех. этап", "Name_type": "Спасение пострадавшего" }, "geometry": { "type": "Point", "coordinates": [ 4252673.225963319651783, 7245792.890103072859347 ] } }
+]
+}
