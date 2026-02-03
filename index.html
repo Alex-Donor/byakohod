@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>БякоХод — Маршрутизация</title>
-    <!-- Подключение только Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
@@ -63,7 +62,25 @@
             z-index: 1000;
             align-items: center;
         }
-        #left-controls .control-btn {
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0,0,0,0.3);
+            font-size: 20px;
+            color: #333;
+            padding: 0;
+            margin: 0;
+            font-weight: bold;
+            line-height: 1;
+        }
+        #search-points-btn {
             width: 40px;
             height: 40px;
             background: white;
@@ -96,25 +113,6 @@
                 -1px 1px 0 white,
                 1px 1px 0 white;
             pointer-events: none;
-        }
-        /* Кнопка поиска меток */
-        #search-points-btn {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0,0,0,0.3);
-            font-size: 20px;
-            color: #333;
-            padding: 0;
-            margin: 0;
-            font-weight: bold;
-            line-height: 1;
         }
         #dropdown-menu {
             display: none;
@@ -196,30 +194,23 @@
             font-weight: bold;
             display: none;
         }
-        /* Основные правые кнопки (замок, КП 2025, отмена) - НА БАЗОВЫХ КАРТАХ */
-        #basic-map-right-controls {
+        .map-controls {
             position: absolute;
             top: calc(12px + var(--safe-area-inset-top));
-            right: calc(12px + var(--safe-area-inset-right));
-            display: flex;
-            gap: 8px;
             z-index: 1003;
             align-items: center;
         }
-        
-        /* Правые кнопки на Google Satellite */
-        #google-map-right-controls {
-            position: absolute;
-            top: calc(12px + var(--safe-area-inset-top));
+        .right-controls {
             right: calc(12px + var(--safe-area-inset-right));
             display: flex;
             gap: 8px;
-            z-index: 1003;
-            align-items: center;
         }
-        
-        #basic-map-right-controls button,
-        #google-map-right-controls button {
+        .left-controls {
+            left: calc(60px + var(--safe-area-inset-left));
+            display: flex;
+            gap: 8px;
+        }
+        .map-controls button {
             width: 40px;
             height: 40px;
             background: white;
@@ -237,19 +228,17 @@
             font-weight: bold;
             line-height: 1;
         }
-        #kp-layer-btn {
+        #kp-layer-btn, #kp-layer-btn-google, #danger-layer-btn, #danger-layer-btn-google {
             font-size: 13px !important;
             font-weight: bold !important;
         }
-        #json-points-btn {
-            font-size: 20px !important;
+        #all-edges-btn {
+            font-size: 16px !important;
         }
-        #json-points-btn.active,
-        #points-layer-btn.active,
-        #kp-layer-btn.active {
+        .layer-active {
             background-color: #4CAF50 !important;
             border-color: #388E3C !important;
-            color: white;
+            color: white !important;
         }
         #loading-overlay {
             display: none;
@@ -324,54 +313,16 @@
         .custom-dialog-button-ok {
             background: #dcdcdc;
         }
-        .file-selector-dialog {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 3000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .file-selector-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-            font-family: Calibri, Arial, sans-serif;
-            max-width: 90%;
-            width: 320px;
-            max-height: 80%;
-            overflow-y: auto;
-        }
-        .file-selector-title {
-            margin-top: 0;
-            margin-bottom: 15px;
-            text-align: center;
-            color: #222;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .file-selector-item {
-            padding: 12px;
-            margin: 6px 0;
-            border: 2px solid #007BFF;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: #f0f8ff;
-            font-size: 14px;
-            font-weight: bold;
-            color: #0056b3;
-        }
-        .file-selector-item:hover {
-            background: #e3f2fd;
-        }
-        .leaflet-control-attribution {
+        /* Стили для позиционирования тултипов ниже указателя */
+        .leaflet-popup-tip {
             display: none !important;
+        }
+        .leaflet-popup-content-wrapper {
+            margin-top: 15px !important;
+        }
+        .leaflet-popup {
+            bottom: 0 !important;
+            margin-bottom: 15px !important;
         }
         .route-io-section {
             border: 2px solid #007BFF;
@@ -418,11 +369,9 @@
             cursor: pointer;
             flex-shrink: 0;
         }
-        
-        /* Окно нитка маршрута */
         #route-points-popup {
             position: fixed;
-            bottom: calc(140px + var(--safe-area-inset-bottom)); /* Смещено еще ниже */
+            bottom: calc(140px + var(--safe-area-inset-bottom));
             right: calc(12px + var(--safe-area-inset-right));
             background: white;
             padding: 12px;
@@ -434,7 +383,7 @@
             font-family: Calibri, Arial, sans-serif;
             font-size: 13px;
             z-index: 2000;
-            max-width: 150px;
+            max-width: 200px;
             display: none;
         }
         .route-point-item {
@@ -445,13 +394,22 @@
             margin: 3px 0;
             background-color: #e6f7ff;
             border-left: 3px solid #b3e0ff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .route-point-item:hover {
             background-color: #d0ebff;
         }
+        .direction-indicator {
+            font-size: 16px;
+            margin-left: 8px;
+            width: 20px;
+            text-align: center;
+        }
         #show-route-points-btn {
             position: absolute;
-            bottom: calc(100px + var(--safe-area-inset-bottom)); /* Смещено ниже кнопок управления метками */
+            bottom: calc(100px + var(--safe-area-inset-bottom));
             right: calc(12px + var(--safe-area-inset-right));
             padding: 8px 12px;
             background: #dcdcdc;
@@ -463,8 +421,6 @@
             display: none;
             box-shadow: 0 1px 4px rgba(0,0,0,0.25);
         }
-        
-        /* Попап для добавления пользовательских меток */
         #add-point-popup {
             display: none;
             position: fixed;
@@ -531,8 +487,6 @@
             font-family: Calibri, Arial, sans-serif;
             font-size: 14px;
         }
-        
-        /* Стиль для подписи "by Alex Donor" */
         .menu-copyright {
             text-align: center;
             margin-top: 10px;
@@ -560,150 +514,110 @@
             color: #004499;
             text-decoration: underline;
         }
-        
-        /* Стили для подписей меток */
-        .kp-label-tech {
+        .kp-label-tech, .kp-label-point, .point-label-from-json, .user-point-label, .route-point-label, .danger-point-label {
             font-family: Calibri, Arial, sans-serif !important;
-            font-size: 10px !important;
             font-weight: bold !important;
+            background: transparent !important;
+            border: none !important;
+            white-space: nowrap !important;
+        }
+        .kp-label-tech {
+            font-size: 10px !important;
             color: #ff0000 !important;
             text-shadow:
                 -1px -1px 0 white,
                 1px -1px 0 white,
                 -1px 1px 0 white,
-                3px 3px 0 white !important;
-            background: transparent !important;
-            border: none !important;
-            white-space: nowrap !important;
+                1px 1px 0 white !important;
         }
         .kp-label-point {
-            font-family: Calibri, Arial, sans-serif !important;
             font-size: 10px !important;
-            font-weight: bold !important;
             color: #004524 !important;
             text-shadow:
                 -1px -1px 0 white,
                 1px -1px 0 white,
                 -1px 1px 0 white,
-                3px 3px 0 white !important;
-            background: transparent !important;
-            border: none !important;
-            white-space: nowrap !important;
+                1px 1px 0 white !important;
         }
         .point-label-from-json {
-            font-family: Calibri, Arial, sans-serif !important;
             font-size: 10px !important;
-            font-weight: bold !important;
             color: #5D4037 !important;
             text-shadow:
                 -1px -1px 0 white,
                 1px -1px 0 white,
                 -1px 1px 0 white,
                 1px 1px 0 white !important;
-            background: transparent !important;
-            border: none !important;
-            white-space: nowrap !important;
         }
-        
-        /* Подписи пользовательских меток */
         .user-point-label {
-            font-family: Calibri, Arial, sans-serif !important;
             font-size: 12px !important;
-            font-weight: bold !important;
             color: #8B008B !important;
             text-shadow:
                 -1px -1px 0 white,
                 1px -1px 0 white,
                 -1px 1px 0 white,
                 2px 2px 0 white !important;
-            background: transparent !important;
-            border: none !important;
-            white-space: nowrap !important;
         }
-        
-        /* Стили для подписей точек маршрута (СТАРТ/ФИНИШ/цифры) - ВЫСОКИЙ ПРИОРИТЕТ */
-        .route-point-label {
-			font-family: Calibri, Arial, sans-serif !important;
-			font-size: 14px !important;
-			font-weight: bold !important;
-			color: #0d47a1 !important;
-			text-shadow:
-				-1px -1px 0 white,
-				1px -1px 0 white,
-				-1px 1px 0 white,
-				2px 2px 0 white !important;
-			/* УДАЛЕНО: border: 2px solid #0d47a1 !important; */
-			border-radius: 4px !important;
-			padding: 4px 8px !important;
-			white-space: nowrap !important;
-			box-shadow: 0 3px 8px rgba(0,0,0,0.4) !important;
-			z-index: 10000 !important; /* Очень высокий приоритет */
-		}
-
-        /* Старый стиль подписей точек на маршруте (из JSON) */
-        .route-point-label-old {
-            font-family: Calibri, Arial, sans-serif !important;
-            font-size: 11px !important;
-            font-weight: bold !important;
-            color: #01579b !important;
+        .danger-point-label {
+            font-size: 10px !important;
+            color: #d32f2f !important;
             text-shadow:
                 -1px -1px 0 white,
                 1px -1px 0 white,
                 -1px 1px 0 white,
                 1px 1px 0 white !important;
+        }
+        .route-point-label-old {
+            font-family: Calibri, Arial, sans-serif !important;
+            font-size: 11px !important;
+            font-weight: bold !important;
+            color: #01579b !important;
             background: #e3f2fd !important;
             border: 1px solid #90caf9 !important;
             border-radius: 3px !important;
             padding: 1px 3px !important;
             white-space: nowrap !important;
-            z-index: 100 !important; /* Низкий приоритет */
+            z-index: 100 !important;
+            text-shadow:
+                -1px -1px 0 white,
+                1px -1px 0 white,
+                -1px 1px 0 white,
+                1px 1px 0 white !important;
         }
-        
-        /* Маркеры точек маршрута с белой обводкой */
         .route-point-marker {
             stroke: white !important;
             stroke-width: 2px !important;
         }
-        
-        /* Скрытие подписей при низком зуме */
         .label-hidden {
             display: none !important;
         }
-        
-        /* НОВЫЙ БЛОК УПРАВЛЕНИЯ ПОЛЬЗОВАТЕЛЬСКИМИ МЕТКАМИ - РАСПОЛОЖЕН НИЖЕ */
         #points-controls-container {
             position: absolute;
-            top: calc(60px + var(--safe-area-inset-top)); /* Еще ниже, чтобы не перекрывалось */
+            top: calc(60px + var(--safe-area-inset-top));
             right: calc(12px + var(--safe-area-inset-right));
             display: flex;
             flex-direction: column;
             align-items: flex-end;
             gap: 8px;
-            z-index: 1002; /* Ниже основных кнопок */
+            z-index: 1002;
         }
-        
-        /* Основная кнопка управления метками */
         #points-controls-main {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
         #points-controls-expanded {
             display: none;
-            flex-direction: column; /* Изменено на column для вертикального расположения */
+            flex-direction: column;
             gap: 8px;
-            margin-top: 8px; /* Добавляем отступ сверху */
+            margin-top: 8px;
             margin-right: 8px;
             transition: all 0.3s ease;
-            align-items: flex-end; /* Выравниваем по правому краю */
+            align-items: flex-end;
         }
-        
         #points-controls-expanded.active {
             display: flex;
-            animation: slideInDown 0.3s ease; /* Изменена анимация */
+            animation: slideInDown 0.3s ease;
         }
-        
         @keyframes slideInDown {
             from {
                 opacity: 0;
@@ -714,8 +628,6 @@
                 transform: translateY(0);
             }
         }
-        
-        /* Кнопки управления метками */
         .points-control-btn {
             width: 40px;
             height: 40px;
@@ -735,52 +647,39 @@
             line-height: 1;
             transition: all 0.2s;
         }
-        
-        /* Кнопка меток */
-        #points-layer-btn {
+        #points-layer-btn.active {
             background-color: #8B008B !important;
             border-color: #6A006A !important;
             color: white !important;
         }
-        
-        /* Кнопка добавления */
         #add-point-btn {
-            background-color: #4CAF50 !important;
-            border-color: #388E3C !important;
-            color: white !important;
+            background-color: white !important;
+            border-color: #ccc !important;
+            color: #333 !important;
             display: none;
         }
-        
-        /* Кнопка редактирования */
         #edit-points-btn {
-            background-color: #ff9800 !important;
-            border-color: #f57c00 !important;
-            color: white !important;
+            background-color: white !important;
+            border-color: #ccc !important;
+            color: #333 !important;
             display: none;
         }
-        
-        /* Кнопка отмены редактирования */
         #cancel-edit-btn {
-            background-color: #f44336 !important;
-            border-color: #d32f2f !important;
-            color: white !important;
+            background-color: white !important;
+            border-color: #ccc !important;
+            color: #333 !important;
             display: none;
         }
-        
-        /* Кнопка удаления */
         #delete-point-btn {
-            background-color: #f44336 !important;
-            border-color: #d32f2f !important;
-            color: white !important;
+            background-color: white !important;
+            border-color: #ccc !important;
+            color: #333 !important;
             display: none;
         }
-        
-        /* Режим редактирования меток - исправляем анимацию */
         .user-point-marker.editing {
             animation: pulse 1.5s infinite;
             cursor: pointer;
         }
-        
         @keyframes pulse {
             0% {
                 box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
@@ -792,12 +691,10 @@
                 box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
             }
         }
-        
         .user-point-marker.selected {
             animation: selected-pulse 1s infinite;
             box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7) !important;
         }
-        
         @keyframes selected-pulse {
             0% {
                 box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7);
@@ -809,13 +706,6 @@
                 box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7);
             }
         }
-        
-        /* Убираем стандартную обводку Leaflet при выборе */
-        .user-point-marker.editing.leaflet-interactive {
-            outline: none;
-        }
-
-        /* Улучшенное окно редактирования меток */
         #edit-point-popup .custom-dialog {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             border: 3px solid #ff9800;
@@ -825,7 +715,6 @@
             width: 320px;
             max-width: 90vw;
         }
-
         #edit-point-popup .custom-dialog-title {
             font-size: 18px;
             font-weight: bold;
@@ -835,13 +724,11 @@
             padding-bottom: 10px;
             border-bottom: 2px solid #eee;
         }
-
         #edit-point-popup .custom-dialog-message {
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
-
         #edit-point-popup label {
             display: block;
             font-weight: bold;
@@ -849,7 +736,6 @@
             margin-bottom: 5px;
             font-size: 14px;
         }
-
         #edit-point-popup input,
         #edit-point-popup textarea {
             width: 100%;
@@ -861,30 +747,25 @@
             box-sizing: border-box;
             transition: border-color 0.3s;
         }
-
         #edit-point-popup input:focus,
         #edit-point-popup textarea:focus {
             outline: none;
             border-color: #ff9800;
             box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
         }
-
         #edit-point-popup input {
             height: 40px;
         }
-
         #edit-point-popup textarea {
             min-height: 80px;
             resize: vertical;
         }
-
         #edit-point-popup .custom-dialog-buttons {
             display: flex;
             gap: 10px;
             justify-content: space-between;
             margin-top: 20px;
         }
-
         #edit-point-popup .custom-dialog-button {
             padding: 10px 20px;
             font-size: 14px;
@@ -900,58 +781,181 @@
             justify-content: center;
             text-align: center;
         }
-
         #edit-point-cancel {
             background: #e0e0e0;
             color: #333;
         }
-
-        #edit-point-cancel:hover {
-            background: #d0d0d0;
-        }
-
         #edit-point-delete {
             background: #f44336;
             color: white;
         }
-
-        #edit-point-delete:hover {
-            background: #d32f2f;
-        }
-
         #edit-point-save {
             background: #4CAF50;
             color: white;
         }
+        #search-panel {
+            position: absolute;
+            top: calc(58px + var(--safe-area-inset-top));
+            left: calc(60px + var(--safe-area-inset-left));
+            width: 220px;
+            display: none;
+            z-index: 1003;
+            transition: all 0.3s ease;
+        }
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #aaa;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Calibri, Arial, sans-serif;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        #search-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+        }
+        #search-results-panel {
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 2px solid #aaa;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .search-result-item-panel {
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: Calibri, Arial, sans-serif;
+            border-bottom: 1px solid #eee;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .search-result-item-panel:hover {
+            background-color: #f0f8ff;
+        }
+        .search-highlight-marker {
+            z-index: 10000 !important;
+        }
+        .search-highlight-marker .leaflet-marker-icon {
+            filter: drop-shadow(0 0 8px rgba(0, 102, 204, 0.8));
+        }
+        .search-halo {
+            animation: halo-pulse 2s infinite;
+            z-index: 500 !important;
+        }
+        @keyframes halo-pulse {
+            0% {
+                opacity: 0.7;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.1);
+            }
+            100% {
+                opacity: 0.7;
+                transform: scale(1);
+            }
+        }
+        /* Стили для плавного перемещения карты */
+        .smooth-pan {
+            transition: transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+        }
+        /* Стили для синих цифр в окне нитка маршрута */
+        .route-point-item strong {
+            color: #0066cc !important;
+            font-weight: bold !important;
+        }
+        /* Стили для легенды */
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+            font-size: 12px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            border-radius: 2px;
+            border: 1px solid #aaa;
+        }
+        .tunnel-legend {
+            margin-top: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 12px;
+        }
+        .tunnel-legend-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #333;
+            text-align: center;
+        }
+        /* Скрытие аттрибуции Leaflet */
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+        
+        /* ИЗМЕНЕНИЯ ДЛЯ КНОПОК УПРАВЛЕНИЯ МАРШРУТОМ - ПЕРЕМЕЩЕНЫ ВПРАВО */
+        
+        /* Базовые элементы управления (для карт byaki.png и map2.png) */
+        #basic-map-controls {
+            position: absolute;
+            top: calc(12px + var(--safe-area-inset-top));
+            right: calc(12px + var(--safe-area-inset-right));
+            display: none;
+            flex-direction: row;
+            gap: 8px;
+            z-index: 1003;
+            align-items: center;
+        }
 
-        #edit-point-save:hover {
-            background: #388E3C;
-        }
-        
-        /* Кнопки undo и замок для базовых карт */
-        #basic-map-left-controls {
+        #basic-map-controls-2 {
             position: absolute;
-            top: calc(12px + var(--safe-area-inset-top));
-            right: calc(60px + var(--safe-area-inset-right)); /* Слева от КП 2025 */
-            display: flex;
+            top: calc(70px + var(--safe-area-inset-top));
+            right: calc(12px + var(--safe-area-inset-right));
+            display: none;
+            flex-direction: row;
             gap: 8px;
-            z-index: 1002;
+            z-index: 1003;
             align-items: center;
         }
-        
-        /* Кнопки undo, замок и КП 2025 для Google карты */
-        #google-map-left-controls {
+
+        /* Элементы управления для Google карт */
+        #google-map-controls {
             position: absolute;
             top: calc(12px + var(--safe-area-inset-top));
-            right: calc(60px + var(--safe-area-inset-right)); /* Слева от кнопки "метки на карте" */
-            display: flex;
+            right: calc(12px + var(--safe-area-inset-right));
+            display: none;
+            flex-direction: row;
             gap: 8px;
-            z-index: 1002;
+            z-index: 1003;
             align-items: center;
         }
-        
-        #basic-map-left-controls button,
-        #google-map-left-controls button {
+
+        #google-map-controls-2 {
+            position: absolute;
+            top: calc(70px + var(--safe-area-inset-top));
+            right: calc(12px + var(--safe-area-inset-right));
+            display: none;
+            flex-direction: row;
+            gap: 8px;
+            z-index: 1003;
+            align-items: center;
+        }
+
+        /* Общие стили для кнопок управления */
+        #basic-map-controls button,
+        #basic-map-controls-2 button,
+        #google-map-controls button,
+        #google-map-controls-2 button {
             width: 40px;
             height: 40px;
             background: white;
@@ -969,294 +973,58 @@
             font-weight: bold;
             line-height: 1;
         }
-        
-        /* Стили для окна поиска */
-        #search-points-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        #search-points-popup {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.8);
-            border: 3px solid #007bff;
-        }
-        
-        #search-points-popup h3 {
-            margin: 0 0 15px 0;
-            text-align: center;
-            font-size: 18px;
-            color: #007bff;
-            font-weight: bold;
-        }
-        
-        #search-input-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        #search-points-input {
-            flex: 1;
-            padding: 12px 15px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 14px;
-        }
-        
-        #search-points-input:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
-        }
-        
-        #search-points-button {
-            padding: 12px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        #search-points-button:hover {
-            background: #0056cc;
-        }
-        
-        #search-results-container {
-            flex: 1;
-            overflow-y: auto;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            padding: 10px;
-            background: #f8f9fa;
-        }
-        
-        .search-result-item {
-            padding: 12px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .search-result-item:hover {
-            background: #e3f2fd;
-            border-color: #007bff;
-            transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .search-result-item.selected {
-            background: #d0ebff;
-            border-color: #0056cc;
-            border-width: 2px;
-        }
-        
-        .result-point-name {
-            font-weight: bold;
-            color: #333;
-            font-size: 14px;
-        }
-        
-        .result-point-coords {
-            font-size: 12px;
-            color: #666;
-            font-family: monospace;
-        }
-        
-        #search-no-results {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-style: italic;
-        }
-        
-        #search-points-close {
-            margin-top: 15px;
-            padding: 10px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        #search-points-close:hover {
-            background: #545b62;
-        }
-        
-        /* НОВЫЙ СТИЛЬ: Панель поиска как в Android версии */
-        #search-panel {
-            position: absolute;
-            top: calc(58px + var(--safe-area-inset-top));
-            left: calc(60px + var(--safe-area-inset-left));
-            width: 220px;
-            display: none;
-            z-index: 1003;
-            transition: all 0.3s ease;
-        }
-        
-        #search-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 2px solid #aaa;
-            border-radius: 4px;
-            font-size: 14px;
-            font-family: Calibri, Arial, sans-serif;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        
-        #search-input:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
-        }
-        
-        #search-results-panel {
-            max-height: 200px;
-            overflow-y: auto;
-            background: white;
-            border: 2px solid #aaa;
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            display: none;
-        }
-        
-        .search-result-item-panel {
-            padding: 6px 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-family: Calibri, Arial, sans-serif;
-            border-bottom: 1px solid #eee;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        .search-result-item-panel:hover {
-            background-color: #f0f8ff;
-        }
-        
-        /* Стиль для подсветки найденной точки (синий маркер с ореолом) */
-        .search-highlight-marker {
-            z-index: 10000 !important;
-        }
-        
-        .search-highlight-marker .leaflet-marker-icon {
-            filter: drop-shadow(0 0 8px rgba(0, 102, 204, 0.8));
-        }
-        
-        /* Стиль для ореола вокруг маркера */
-        .search-halo {
-            animation: halo-pulse 2s infinite;
-            z-index: 9999 !important;
-        }
-        
-        @keyframes halo-pulse {
-            0% {
-                opacity: 0.7;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.9;
-                transform: scale(1.1);
-            }
-            100% {
-                opacity: 0.7;
-                transform: scale(1);
-            }
-        }
-		
-		/* Стили для кнопки КП 2025 на базовых картах */
-		#kp-layer-btn {
-			font-size: 13px !important;
-			font-weight: bold !important;
-		}
 
-		/* Стили для кнопки КП 2025 на Google Satellite - ТАКОЙ ЖЕ РАЗМЕР */
-		#kp-layer-btn-google {
-			font-size: 13px !important;
-			font-weight: bold !important;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			padding: 0;
-			margin: 0;
-		}
-		
+        #kp-layer-btn, #kp-layer-btn-google, #danger-layer-btn, #danger-layer-btn-google {
+            font-size: 13px !important;
+            font-weight: bold !important;
+        }
+
+        #all-edges-btn {
+            font-size: 16px !important;
+        }
     </style>
 </head>
 <body>
-    <!-- Основные элементы интерфейса -->
-    <div id="menu-button">
+    <div id="menu-button" title="Меню">
         <span></span>
         <span></span>
         <span></span>
     </div>
     <div id="left-controls">
-        <button class="control-btn" id="zoom-in">+</button>
-        <button class="control-btn" id="zoom-out">−</button>
+        <button class="control-btn" id="zoom-in" title="Увеличить">+</button>
+        <button class="control-btn" id="zoom-out" title="Уменьшить">−</button>
         <div id="zoom-level-display">0</div>
         <button id="search-points-btn" title="Поиск точек">🔍</button>
     </div>
     
-    <!-- Панель поиска (Android стиль) -->
     <div id="search-panel">
         <input type="text" id="search-input" placeholder="Поиск точек...">
         <div id="search-results-panel"></div>
     </div>
     
-    <!-- Управление для базовых карт (byaki.png, map2.png) -->
-    <div id="basic-map-right-controls" style="display: none;">
-        <button id="kp-layer-btn">КП 2025</button>
+    <!-- Базовые элементы управления (для карт byaki.png и map2.png) - ПЕРЕМЕЩЕНЫ ВПРАВО -->
+    <div id="basic-map-controls" style="display: none;">
+        <button id="lock-btn" title="Блокировка маршрута">🔓</button>
+        <button id="kp-layer-btn" title="КП соревнований 2025 г.">КП 2025</button>
+        <button id="danger-layer-btn" title="Опасные места">🚷</button>
+    </div>
+
+    <div id="basic-map-controls-2" style="display: none;">
+        <button id="undo-btn" style="display: none;" title="Шаг назад">↩️</button>
+    </div>
+
+    <!-- Элементы управления для Google карт - ПЕРЕМЕЩЕНЫ ВПРАВО -->
+    <div id="google-map-controls" style="display: none;">
+        <button id="lock-btn-google" title="Блокировка маршрута">🔓</button>
+        <button id="kp-layer-btn-google" title="КП соревнований 2025 г.">КП 2025</button>
+        <button id="danger-layer-btn-google" title="Опасные места">🚷</button>
+        <button id="all-edges-btn" title="Показать все метки и ребра">📍</button>
+    </div>
+
+    <div id="google-map-controls-2" style="display: none;">
+        <button id="undo-btn-google" style="display: none;" title="Шаг назад">↩️</button>
     </div>
     
-    <div id="basic-map-left-controls" style="display: none;">
-        <button id="undo-btn" style="display: none;">↩️</button>
-        <button id="lock-btn">🔓</button>
-    </div>
-    
-    <!-- Управление для Google Satellite -->
-    <div id="google-map-right-controls" style="display: none;">
-        <button id="json-points-btn" style="display: none;">📍</button>
-    </div>
-    
-    <div id="google-map-left-controls" style="display: none;">
-        <button id="undo-btn-google" style="display: none;">↩️</button>
-        <button id="lock-btn-google">🔓</button>
-        <button id="kp-layer-btn-google">КП 2025</button>
-    </div>
-    
-    <!-- Блок управления пользовательскими метками - ЕЩЕ НИЖЕ основных кнопок -->
     <div id="points-controls-container">
         <div id="points-controls-main">
             <button id="points-layer-btn" class="points-control-btn" title="Показать/скрыть метки">📌</button>
@@ -1269,7 +1037,6 @@
         </div>
     </div>
     
-    <!-- Выпадающее меню -->
     <div id="dropdown-menu">
         <div class="menu-section">
             <span class="menu-label">Выберите карту:</span>
@@ -1285,11 +1052,11 @@
             <div class="route-save-row">
                 <span class="menu-label inline">Сохранить:</span>
                 <input type="text" id="route-name" placeholder="Имя маршрута">
-                <button class="menu-btn icon-only" id="save-route">💾</button>
+                <button class="menu-btn icon-only" id="save-route" title="Сохранить маршрут в файл">💾</button>
             </div>
             <div class="route-load-row">
                 <span class="menu-label inline">Загрузить:</span>
-                <button class="menu-btn icon-only" id="load-route">📁</button>
+                <button class="menu-btn icon-only" id="load-route" title="Загрузить маршрут из файла">📁</button>
                 <input type="file" id="route-file-input" accept=".json" style="display: none;">
             </div>
         </div>
@@ -1299,12 +1066,34 @@
             <div class="route-save-row">
                 <span class="menu-label inline">Сохранить:</span>
                 <input type="text" id="bookmark-name" placeholder="Имя меток">
-                <button class="menu-btn icon-only" id="save-bookmark">💾</button>
+                <button class="menu-btn icon-only" id="save-bookmark" title="Сохранить метки в файл">💾</button>
             </div>
             <div class="route-load-row">
                 <span class="menu-label inline">Загрузить:</span>
-                <button class="menu-btn icon-only" id="load-bookmark">📁</button>
+                <button class="menu-btn icon-only" id="load-bookmark" title="Загрузить метки из файла">📁</button>
                 <input type="file" id="bookmark-file-input" accept=".geojson" style="display: none;">
+            </div>
+        </div>
+        
+        <!-- ДОБАВЛЕН БЛОК СТАТИСТИКИ -->
+        <div class="menu-section route-io-section">
+            <div style="text-align: center; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Статистика</div>
+            <div style="
+                font-size: 12px;
+                padding: 8px;
+                background: white;
+                border-radius: 4px;
+                border: 1px solid #ddd;
+                text-align: center;
+                line-height: 1.4;
+                margin: 6px 0;
+            ">
+                Посчитанная протяженность всех штреков:<br>
+                <span id="total-tunnel-length" style="
+                    font-weight: bold;
+                    color: #007bff;
+                    font-size: 13px;
+                ">загрузка...</span> метров
             </div>
         </div>
         
@@ -1318,30 +1107,26 @@
         </div>
     </div>
     
-    <!-- Управление маршрутом -->
-    <button id="clear-route-btn">🗑️ Очистить маршрут</button>
+    <button id="clear-route-btn" title="Удалить весь маршрут">🗑️ Очистить маршрут</button>
+    <button id="show-route-points-btn" title="Показать/скрыть нитку маршрута">📍</button>
     
-    <!-- Кнопка показа точек маршрута - СМЕЩЕНА ЕЩЕ НИЖЕ -->
-    <button id="show-route-points-btn">📍</button>
-    
-    <!-- Окно нитка маршрута - ТАКЖЕ СМЕЩЕНО -->
     <div id="route-points-popup">
-        <div style="font-weight: bold; margin-bottom: 8px; font-size: 13px;">Нитка маршрута:</div>
+        <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">
+            <div style="font-size: 13px;">Нитка маршрута</div>
+            <div style="font-size: 11px; font-weight: normal; margin-top: -2px;">
+                (стрелки направления указаны относительно севера)
+            </div>
+        </div>
         <div id="route-points-list"></div>
     </div>
     
-    <!-- Основная карта -->
     <div id="map"></div>
-    
-    <!-- Статусная строка -->
     <div id="status">Загрузка карты...</div>
     
-    <!-- Оверлей загрузки -->
     <div id="loading-overlay">
         <div id="loading-modal">Пожалуйста, подождите…<br>Маршрут строится</div>
     </div>
     
-    <!-- Попап для добавления пользовательских меток -->
     <div id="add-point-overlay"></div>
     <div id="add-point-popup">
         <h3>Добавить новую метку</h3>
@@ -1355,7 +1140,6 @@
         </div>
     </div>
     
-    <!-- Попап для редактирования пользовательских меток -->
     <div id="edit-point-overlay" class="custom-dialog-overlay">
         <div id="edit-point-popup" class="custom-dialog" style="width: 300px;">
             <div class="custom-dialog-title">Редактировать метку</div>
@@ -1373,7 +1157,6 @@
         </div>
     </div>
     
-    <!-- Кастомные диалоги -->
     <div id="custom-alert-overlay" class="custom-dialog-overlay">
         <div class="custom-dialog">
             <div class="custom-dialog-title">Информация</div>
@@ -1384,7 +1167,6 @@
         </div>
     </div>
     
-    <!-- Отказ от ответственности -->
     <div id="disclaimer-overlay" class="custom-dialog-overlay">
         <div style="
             background: white;
@@ -1435,87 +1217,50 @@
             touchZoom: true,
             scrollWheelZoom: true,
             dragging: true,
-            wheelPxPerZoomLevel: 60
+            wheelPxPerZoomLevel: 60,
+            attributionControl: false // Отключаем аттрибуцию
         });
-        
-        let currentImageOverlay = null;
-        let googleSatelliteLayer = null;
-        let currentMapType = 'byaki.png';
-        let entranceMarker = null;
-        let routeLocked = false;
-        let menuOpen = false;
-        let isUserPointsMode = false;
-        let isEditMode = false;
-        let pendingPointCoords = null;
-        let selectedPointIndex = null;
-        
-        // Слои и маркеры
-        let kpLayer = null;
-        let kpLayerVisible = false;
-        let kpMarkers = [];
-        let kpLabels = [];
-        let userPointsLayer = null;
-        let userPointsLayerVisible = false;
-        let userPointMarkers = [];
-        let userPointLabels = [];
-        let jsonPointsLayer = null;
-        let jsonPointsLayerVisible = false;
-        let jsonPointsMarkers = [];
-        let jsonPointsLabels = [];
-        
-        // Данные маршрута
-        let segments = [];
-        let graph = {};
-        let segmentWeights = {};
-        let selectedPoints = [];
-        let pointMarkers = [];
-        let routeLayer = null;
-        let routePointMarkers = [];
-        let routeLabelMarkers = [];
-        let mapBounds = null;
-        let fullRoutePath = [];
-        let allPointsGeoJson = null;
         
         const SCALE_CORRECTION = 84 / 145.9;
         const ENTRANCE_COORDS_EPSG3857 = [4252305.4, 7245838.4];
-        
-        // Пользовательские данные
-        let userPointsData = { type: "FeatureCollection", features: [] };
-        
-        // Список необходимых файлов
         const REQUIRED_FILES = [
             'tunnels_json.geojson',
             'kp_2025.geojson', 
             'points_json.geojson',
+            'danger_points.geojson',
             'byaki.png',
             'map2.png'
         ];
         
-        // Переменные для поиска (Android стиль)
-        let searchPanelVisible = false;
-        let searchHighlightMarker = null; // Маркер для подсветки найденной точки
-        let searchHaloMarker = null; // Ореол вокруг маркера
+        let currentImageOverlay = null, googleSatelliteLayer = null;
+        let currentMapType = 'byaki.png', entranceMarker = null, routeLocked = false;
+        let menuOpen = false, isUserPointsMode = false, isEditMode = false;
+        let pendingPointCoords = null, selectedPointIndex = null;
+        let kpLayer = null, kpLayerVisible = false;
+        let userPointsLayer = null, userPointsLayerVisible = false;
+        let jsonPointsLayer = null, jsonPointsLayerVisible = false;
+        let dangerLayer = null, dangerLayerVisible = false;
+        let allEdgesLayer = null, allEdgesLayerVisible = false; // Новый слой для всех ребер
+        let segments = [], graph = {}, segmentWeights = {};
+        let selectedPoints = [], pointMarkers = [], routeLayer = null;
+        let routePointMarkers = [], routeLabelMarkers = [];
+        let mapBounds = null, fullRoutePath = [], allPointsGeoJson = null;
+        let userPointsData = { type: "FeatureCollection", features: [] };
+        let userPointMarkers = [], userPointLabels = [];
+        let searchPanelVisible = false, searchHighlightMarker = null, searchHaloMarker = null;
         let lastSearchQuery = '';
-        
+
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
         function updateZoomDisplay() {
-            const zoom = map.getZoom();
-            document.getElementById('zoom-level-display').textContent = Math.round(zoom);
+            document.getElementById('zoom-level-display').textContent = Math.round(map.getZoom());
         }
         
         function showCustomAlert(message) {
             const overlay = document.getElementById('custom-alert-overlay');
-            const messageEl = document.getElementById('custom-alert-message');
-            messageEl.textContent = message;
+            document.getElementById('custom-alert-message').textContent = message;
             overlay.style.display = 'flex';
-            
-            document.getElementById('custom-alert-ok').onclick = () => {
-                overlay.style.display = 'none';
-            };
-            
-            overlay.onclick = (e) => {
-                if (e.target === overlay) overlay.style.display = 'none';
-            };
+            document.getElementById('custom-alert-ok').onclick = () => overlay.style.display = 'none';
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
         }
         
         function hideLoadingOverlay() {
@@ -1542,136 +1287,75 @@
         }
         
         function addEntranceMarker() {
-            if (entranceMarker) {
-                map.removeLayer(entranceMarker);
-                entranceMarker = null;
-            }
-        
+            if (entranceMarker) map.removeLayer(entranceMarker);
+            
+            let latlng;
             if (currentMapType === 'google-satellite') {
                 const [x, y] = ENTRANCE_COORDS_EPSG3857;
-                const [lat, lng] = epsg3857ToWgs84(x, y);
-        
-                entranceMarker = L.marker([lat, lng], {
-                    icon: L.divIcon({
-                        className: 'entrance-marker-large',
-                        html: '<span style="font-size: 30px">🚷</span>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(map).bindPopup("Вход в Гурьевские каменоломни");
+                latlng = epsg3857ToWgs84(x, y);
             } else {
-                const [x, y] = ENTRANCE_COORDS_EPSG3857;
-                entranceMarker = L.marker([y, x], {
-                    icon: L.divIcon({
-                        className: 'entrance-marker-large',
-                        html: '<span style="font-size: 30px">🚷</span>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(map);
+                latlng = [ENTRANCE_COORDS_EPSG3857[1], ENTRANCE_COORDS_EPSG3857[0]];
             }
+            
+            entranceMarker = L.marker(latlng, {
+                icon: L.divIcon({
+                    className: 'entrance-marker-large',
+                    html: '<span style="font-size: 30px">⛔</span>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                })
+            }).addTo(map).bindPopup("Вход в Гурьевские каменоломни");
         }
         
-        // Функция для обновления видимости элементов управления в зависимости от типа карты
         function updateControlsVisibility() {
-            const isGoogleSatellite = currentMapType === 'google-satellite';
+            const isGoogle = currentMapType === 'google-satellite';
             
-            if (isGoogleSatellite) {
-                // Показать элементы для Google Satellite
-                document.getElementById('google-map-right-controls').style.display = 'flex';
-                document.getElementById('google-map-left-controls').style.display = 'flex';
-                document.getElementById('basic-map-right-controls').style.display = 'none';
-                document.getElementById('basic-map-left-controls').style.display = 'none';
+            // Показываем/скрываем соответствующие блоки управления
+            if (isGoogle) {
+                document.getElementById('google-map-controls').style.display = 'flex';
+                document.getElementById('google-map-controls-2').style.display = 'flex';
+                document.getElementById('basic-map-controls').style.display = 'none';
+                document.getElementById('basic-map-controls-2').style.display = 'none';
                 
-                // Обновить кнопку "метки на карте"
-                document.getElementById('json-points-btn').style.display = 'flex';
-                
-                // Синхронизировать состояние кнопок
-                document.getElementById('kp-layer-btn-google').classList.toggle('active', kpLayerVisible);
+                // Обновляем состояние кнопок
+                document.getElementById('kp-layer-btn-google').classList.toggle('layer-active', kpLayerVisible);
+                document.getElementById('danger-layer-btn-google').classList.toggle('layer-active', dangerLayerVisible);
+                document.getElementById('all-edges-btn').classList.toggle('layer-active', allEdgesLayerVisible);
                 document.getElementById('lock-btn-google').textContent = routeLocked ? '🔒' : '🔓';
                 
-                // Обновить видимость кнопки undo
-                if (selectedPoints.length > 0) {
-                    document.getElementById('undo-btn-google').style.display = 'flex';
-                } else {
-                    document.getElementById('undo-btn-google').style.display = 'none';
-                }
+                // Обновляем видимость кнопки undo
+                document.getElementById('undo-btn-google').style.display = selectedPoints.length > 0 ? 'flex' : 'none';
             } else {
-                // Показать элементы для базовых карт
-                document.getElementById('basic-map-right-controls').style.display = 'flex';
-                document.getElementById('basic-map-left-controls').style.display = 'flex';
-                document.getElementById('google-map-right-controls').style.display = 'none';
-                document.getElementById('google-map-left-controls').style.display = 'none';
+                document.getElementById('basic-map-controls').style.display = 'flex';
+                document.getElementById('basic-map-controls-2').style.display = 'flex';
+                document.getElementById('google-map-controls').style.display = 'none';
+                document.getElementById('google-map-controls-2').style.display = 'none';
                 
-                // Обновить состояние кнопок
-                document.getElementById('kp-layer-btn').classList.toggle('active', kpLayerVisible);
+                // Обновляем состояние кнопок
+                document.getElementById('kp-layer-btn').classList.toggle('layer-active', kpLayerVisible);
+                document.getElementById('danger-layer-btn').classList.toggle('layer-active', dangerLayerVisible);
                 document.getElementById('lock-btn').textContent = routeLocked ? '🔒' : '🔓';
                 
-                // Обновить видимость кнопки undo
-                if (selectedPoints.length > 0) {
-                    document.getElementById('undo-btn').style.display = 'flex';
-                } else {
-                    document.getElementById('undo-btn').style.display = 'none';
-                }
+                // Обновляем видимость кнопки undo
+                document.getElementById('undo-btn').style.display = selectedPoints.length > 0 ? 'flex' : 'none';
             }
         }
         
-        // НОВАЯ ФУНКЦИЯ: Обновление видимости меток в зависимости от типа карты и зума
         function updateMarkersVisibilityForCurrentMap() {
             const zoom = map.getZoom();
-            const isGoogleSatellite = currentMapType === 'google-satellite';
+            const isGoogle = currentMapType === 'google-satellite';
+            const showLabels = isGoogle ? zoom >= 17 : true;
             
-            if (isGoogleSatellite) {
-                // На Google Satellite показываем метки только при zoom >= 17
-                const showLabels = zoom >= 17;
-                
-                // Обновляем видимость подписей КП
-                kpLabels.forEach(label => {
-                    const element = label.getElement();
-                    if (element) {
-                        element.style.display = showLabels ? '' : 'none';
-                    }
-                });
-                
-                // Обновляем видимость подписей JSON точек
-                jsonPointsLabels.forEach(label => {
-                    const element = label.getElement();
-                    if (element) {
-                        element.style.display = showLabels ? '' : 'none';
-                    }
-                });
-                
-                // Обновляем видимость подписей пользовательских меток
-                userPointLabels.forEach(label => {
-                    const element = label.getElement();
-                    if (element) {
-                        element.style.display = showLabels ? '' : 'none';
-                    }
-                });
-            } else {
-                // На базовых картах (byaki.png, map2.png) ВСЕГДА показываем метки
-                // (если они включены и отображаются)
-                kpLabels.forEach(label => {
-                    const element = label.getElement();
-                    if (element) {
-                        element.style.display = kpLayerVisible ? '' : 'none';
-                    }
-                });
-                
-                jsonPointsLabels.forEach(label => {
-                    const element = label.getElement();
-                    if (element) {
-                        element.style.display = jsonPointsLayerVisible ? '' : 'none';
-                    }
-                });
-                
-                userPointLabels.forEach(label => {
-                    const element = label.getElement();
-                    if (element) {
-                        element.style.display = userPointsLayerVisible ? '' : 'none';
-                    }
-                });
-            }
+            [kpLayer, jsonPointsLayer, userPointsLayer, dangerLayer, allEdgesLayer].forEach((layer, idx) => {
+                if (layer) {
+                    layer.eachLayer(l => {
+                        const element = l.getElement ? l.getElement() : null;
+                        if (element && element.classList.contains('leaflet-marker-icon')) {
+                            element.style.display = showLabels ? '' : 'none';
+                        }
+                    });
+                }
+            });
         }
         
         // ==================== ЗАГРУЗКА ДАННЫХ ====================
@@ -1686,85 +1370,323 @@
             }
         }
         
+        // ==================== РАСЧЕТ ОБЩЕЙ ДЛИНЫ ШТРЕКОВ ====================
+        async function calculateTotalTunnelLength() {
+            try {
+                const data = await loadGeoJsonFile('tunnels_json.geojson');
+                if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
+                    document.getElementById('total-tunnel-length').textContent = 'ошибка';
+                    return;
+                }
+                
+                let totalLength = 0;
+                
+                data.features.forEach(f => {
+                    if (!f.geometry) return;
+                    
+                    let lines = [];
+                    if (f.geometry.type === 'LineString') {
+                        lines = [f.geometry.coordinates];
+                    } else if (f.geometry.type === 'MultiLineString') {
+                        lines = f.geometry.coordinates;
+                    } else {
+                        return;
+                    }
+                    
+                    lines.forEach(coords => {
+                        if (!Array.isArray(coords) || coords.length < 2) return;
+                        
+                        for (let i = 0; i < coords.length - 1; i++) {
+                            const a = coords[i];
+                            const b = coords[i + 1];
+                            
+                            if (!Array.isArray(a) || !Array.isArray(b) || a.length < 2 || b.length < 2) continue;
+                            
+                            const dx = a[0] - b[0];
+                            const dy = a[1] - b[1];
+                            const segmentLength = Math.sqrt(dx * dx + dy * dy);
+                            totalLength += segmentLength;
+                        }
+                    });
+                });
+                
+                // Применяем поправочный коэффициент масштаба
+                const correctedLength = totalLength * SCALE_CORRECTION;
+                
+                // Форматируем число с разделителями тысяч
+                const formattedLength = Math.round(correctedLength).toLocaleString('ru-RU');
+                document.getElementById('total-tunnel-length').textContent = formattedLength;
+                
+            } catch (error) {
+                console.error('Ошибка расчета длины штреков:', error);
+                document.getElementById('total-tunnel-length').textContent = 'ошибка';
+            }
+        }
+        
+        // ==================== ФУНКЦИИ ДЛЯ РАСЧЕТА НАПРАВЛЕНИЙ ====================
+        function calculateSegmentDirection(start, end) {
+            // Рассчитывает направление сегмента в градусах (0-360)
+            const dx = end[0] - start[0];
+            const dy = end[1] - start[1];
+            let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            
+            // Нормализуем угол от 0 до 360
+            if (angle < 0) angle += 360;
+            
+            return angle;
+        }
+        
+        function getDirectionArrow(angle) {
+            // Определяем направление на основе угла (0° = восток, 90° = север, 180° = запад, 270° = юг)
+            if (angle >= 337.5 || angle < 22.5) return '→'; // Вправо (восток)
+            if (angle >= 22.5 && angle < 67.5) return '↗'; // Вправо-вверх (северо-восток)
+            if (angle >= 67.5 && angle < 112.5) return '↑'; // Вверх (север)
+            if (angle >= 112.5 && angle < 157.5) return '↖'; // Влево-вверх (северо-запад)
+            if (angle >= 157.5 && angle < 202.5) return '←'; // Влево (запад)
+            if (angle >= 202.5 && angle < 247.5) return '↙'; // Влево–вниз (юго-запад)
+            if (angle >= 247.5 && angle < 292.5) return '↓'; // Вниз (юг)
+            if (angle >= 292.5 && angle < 337.5) return '↘'; // Вправо-вниз (юго-восток)
+            return '→';
+        }
+        
+        // ==================== НАХОЖДЕНИЕ ТОЧЕК ВБЛИЗИ МАРШРУТА (С ПРОВЕРКОЙ ДУБЛЕЙ) ====================
+        function findPointsNearRoute(routeCoords, pointsGeoJson, maxDistance = 2.5) {
+            if (!pointsGeoJson || !pointsGeoJson.features) return [];
+            
+            const nearbyPoints = [];
+            const visitedPointKeys = new Set();
+            
+            function getPointKey(coords) {
+                return `${coords[0].toFixed(3)},${coords[1].toFixed(3)}`;
+            }
+            
+            // Проходим по всем сегментам маршрута и находим точки в порядке следования
+            for (let segmentIndex = 0; segmentIndex < routeCoords.length - 1; segmentIndex++) {
+                const a = routeCoords[segmentIndex];
+                const b = routeCoords[segmentIndex + 1];
+                
+                // Для каждого сегмента проверяем все точки
+                pointsGeoJson.features.forEach(feature => {
+                    if (feature.geometry.type !== "Point") return;
+                    
+                    const pt = feature.geometry.coordinates;
+                    const name = feature.properties?.Name;
+                    
+                    if (name == null || !Array.isArray(pt) || pt.length < 2) return;
+                    
+                    const pointKey = getPointKey(pt);
+                    
+                    // Проверяем расстояние от точки до текущего сегмента
+                    const distanceToSegment = pointToSegmentDistance(pt, a, b);
+                    
+                    if (distanceToSegment <= maxDistance) {
+                        // Находим проекцию точки на сегмент
+                        const t = getProjectionFactor(pt, a, b);
+                        
+                        // Позиция точки вдоль маршрута
+                        const positionAlongRoute = segmentIndex + Math.max(0, Math.min(1, t));
+                        
+                        // Проверяем, не была ли эта точка уже добавлена на этом участке маршрута
+                        // Если точка находится рядом с концом сегмента, она может быть обработана следующим сегментом
+                        if (t < 0.9 || segmentIndex === routeCoords.length - 2) {
+                            // Создаем уникальный ключ с учетом позиции вдоль маршрута
+                            const routeKey = `${pointKey}_${positionAlongRoute.toFixed(2)}`;
+                            
+                            if (!visitedPointKeys.has(routeKey)) {
+                                // Находим направление движения в этой точке
+                                let directionSegment = getDirectionSegmentForPoint(pt, routeCoords, segmentIndex);
+                                
+                                // Если не нашли подходящий сегмент для направления, используем текущий
+                                if (!directionSegment) {
+                                    directionSegment = {
+                                        start: a,
+                                        end: b,
+                                        direction: calculateSegmentDirection(a, b)
+                                    };
+                                }
+                                
+                                nearbyPoints.push({
+                                    name,
+                                    coords: pt,
+                                    directionAngle: directionSegment.direction,
+                                    segmentIndex: segmentIndex,
+                                    t: t,
+                                    positionAlongRoute: positionAlongRoute,
+                                    distanceToSegment: distanceToSegment,
+                                    pointKey: pointKey
+                                });
+                                
+                                visitedPointKeys.add(routeKey);
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Сортируем точки строго по порядку следования
+            nearbyPoints.sort((a, b) => {
+                // Сначала по индексу сегмента
+                if (a.segmentIndex !== b.segmentIndex) {
+                    return a.segmentIndex - b.segmentIndex;
+                }
+                // Если на одном сегменте - по позиции на сегменте
+                return a.t - b.t;
+            });
+            
+            // Фильтруем дублирующиеся точки (одинаковые координаты подряд)
+            const filteredPoints = [];
+            
+            for (let i = 0; i < nearbyPoints.length; i++) {
+                const currentPoint = nearbyPoints[i];
+                
+                // Если это первая точка, просто добавляем ее
+                if (i === 0) {
+                    filteredPoints.push(currentPoint);
+                    continue;
+                }
+                
+                const previousPoint = nearbyPoints[i - 1];
+                
+                // Проверяем, не является ли текущая точка дублем предыдущей
+                if (!isSamePoint(currentPoint.coords, previousPoint.coords, 0.001)) {
+                    filteredPoints.push(currentPoint);
+                }
+                // Если точки одинаковые, пропускаем текущую (не добавляем)
+            }
+            
+            return filteredPoints.map(p => ({
+                name: p.name,
+                coords: p.coords,
+                directionAngle: p.directionAngle
+            }));
+        }
+
+        // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+        function isSamePoint(coords1, coords2, tolerance = 0.001) {
+            // Проверяет, совпадают ли две точки с заданной точностью
+            if (!coords1 || !coords2) return false;
+            
+            const dx = Math.abs(coords1[0] - coords2[0]);
+            const dy = Math.abs(coords1[1] - coords2[1]);
+            
+            return dx < tolerance && dy < tolerance;
+        }
+
+        function pointToSegmentDistance(p, a, b) {
+            // Рассчитывает расстояние от точки p до отрезка ab
+            const dx = b[0] - a[0];
+            const dy = b[1] - a[1];
+            const l2 = dx * dx + dy * dy;
+            
+            if (l2 === 0) {
+                // Если a и b совпадают
+                return Math.hypot(p[0] - a[0], p[1] - a[1]);
+            }
+            
+            const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2));
+            const projX = a[0] + t * dx;
+            const projY = a[1] + t * dy;
+            
+            return Math.hypot(p[0] - projX, p[1] - projY);
+        }
+
+        function getProjectionFactor(p, a, b) {
+            // Возвращает параметр t ∈ [0,1] проекции точки p на отрезок ab
+            const dx = b[0] - a[0];
+            const dy = b[1] - a[1];
+            const l2 = dx * dx + dy * dy;
+            
+            if (l2 === 0) return 0;
+            
+            return ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2;
+        }
+
+        function getDirectionSegmentForPoint(pointCoords, routeCoords, currentSegmentIndex) {
+            // Находит сегмент для определения направления движения в точке
+            // Ищем следующий значимый сегмент (не слишком короткий)
+            const maxLookAhead = Math.min(3, routeCoords.length - currentSegmentIndex - 2);
+            
+            for (let i = 0; i <= maxLookAhead; i++) {
+                const idx = currentSegmentIndex + i;
+                if (idx >= routeCoords.length - 1) break;
+                
+                const start = routeCoords[idx];
+                const end = routeCoords[idx + 1];
+                const length = Math.hypot(end[0] - start[0], end[1] - start[1]);
+                
+                if (length > 0.1) { // Игнорируем очень короткие сегменты
+                    return {
+                        start: start,
+                        end: end,
+                        direction: calculateSegmentDirection(start, end)
+                    };
+                }
+            }
+            
+            // Если не нашли значимый сегмент, используем текущий
+            if (currentSegmentIndex < routeCoords.length - 1) {
+                const start = routeCoords[currentSegmentIndex];
+                const end = routeCoords[currentSegmentIndex + 1];
+                return {
+                    start: start,
+                    end: end,
+                    direction: calculateSegmentDirection(start, end)
+                };
+            }
+            
+            return null;
+        }
+        
         async function loadTunnelsData() {
             const data = await loadGeoJsonFile('tunnels_json.geojson');
-            processGeoJsonData(data);
-        }
-        
-        async function loadKpData() {
-            const data = await loadGeoJsonFile('kp_2025.geojson');
-            return data;
-        }
-        
-        async function loadPointsData() {
-            const data = await loadGeoJsonFile('points_json.geojson');
-            allPointsGeoJson = data;
-            return data;
-        }
-        
-        function processGeoJsonData(data) {
-            if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
-                console.error('Некорректная структура GeoJSON файла.');
-                return;
-            }
-        
+            if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) return;
+            
             const allCoords = [];
             segments = [];
             graph = {};
             segmentWeights = {};
-        
+            
             data.features.forEach(f => {
                 if (!f.geometry) return;
                 let lines = [];
                 if (f.geometry.type === 'LineString') lines = [f.geometry.coordinates];
                 else if (f.geometry.type === 'MultiLineString') lines = f.geometry.coordinates;
                 else return;
-        
+                
                 let weight = f.properties?.weight || 5;
                 lines.forEach(coords => {
                     if (!Array.isArray(coords) || coords.length < 2) return;
-                    coords.forEach(pt => {
-                        if (Array.isArray(pt) && pt.length >= 2) {
-                            allCoords.push(pt);
-                        }
-                    });
+                    coords.forEach(pt => Array.isArray(pt) && pt.length >= 2 && allCoords.push(pt));
+                    
                     for (let i = 0; i < coords.length - 1; i++) {
-                        const a = coords[i];
-                        const b = coords[i + 1];
+                        const a = coords[i], b = coords[i + 1];
                         if (!Array.isArray(a) || !Array.isArray(b) || a.length < 2 || b.length < 2) continue;
-        
+                        
                         segments.push([a, b]);
-                        const keyA = a.join(',');
-                        const keyB = b.join(',');
+                        const keyA = a.join(','), keyB = b.join(',');
                         const baseLength = Math.hypot(a[0] - b[0], a[1] - b[1]);
                         let cost;
-                        if (weight === 1) cost = baseLength * 1000; // Завал
-                        else if (weight === 2) cost = baseLength * 4; // Шкуродер
-                        else if (weight === 3) cost = baseLength * 1.5; // Препятствие
-                        else if (weight === 4) cost = baseLength * 5; // Вода
-                        else cost = baseLength; // Свободный проход
-        
+                        if (weight === 1) cost = baseLength * 1000;
+                        else if (weight === 2) cost = baseLength * 4;
+                        else if (weight === 3) cost = baseLength * 1.5;
+                        else if (weight === 4) cost = baseLength * 5;
+                        else cost = baseLength;
+                        
                         if (!graph[keyA]) graph[keyA] = {};
                         if (!graph[keyB]) graph[keyB] = {};
                         if (!graph[keyA][keyB] || cost < graph[keyA][keyB]) {
-                            graph[keyA][keyB] = cost;
-                            graph[keyB][keyA] = cost;
+                            graph[keyA][keyB] = graph[keyB][keyA] = cost;
                             const segmentKey = `${keyA}-${keyB}`;
-                            const reverseKey = `${keyB}-${keyA}`;
-                            segmentWeights[segmentKey] = weight;
-                            segmentWeights[reverseKey] = weight;
+                            segmentWeights[segmentKey] = segmentWeights[`${keyB}-${keyA}`] = weight;
                         }
                     }
                 });
             });
-        
+            
             if (allCoords.length > 0) {
-                const xs = allCoords.map(c => c[0]);
-                const ys = allCoords.map(c => c[1]);
-                const minX = Math.min(...xs);
-                const minY = Math.min(...ys);
-                const maxX = Math.max(...xs);
-                const maxY = Math.max(...ys);
+                const xs = allCoords.map(c => c[0]), ys = allCoords.map(c => c[1]);
+                const minX = Math.min(...xs), minY = Math.min(...ys);
+                const maxX = Math.max(...xs), maxY = Math.max(...ys);
                 mapBounds = [[minY, minX], [maxY, maxX]];
             } else {
                 mapBounds = [[0, 0], [1000, 1000]];
@@ -1822,12 +1744,8 @@
                     let right = 2 * index + 2;
                     let smallest = index;
         
-                    if (left < n && this.heap[left].priority < this.heap[smallest].priority) {
-                        smallest = left;
-                    }
-                    if (right < n && this.heap[right].priority < this.heap[smallest].priority) {
-                        smallest = right;
-                    }
+                    if (left < n && this.heap[left].priority < this.heap[smallest].priority) smallest = left;
+                    if (right < n && this.heap[right].priority < this.heap[smallest].priority) smallest = right;
                     if (smallest === index) break;
         
                     this._swap(index, smallest);
@@ -1848,7 +1766,7 @@
             return Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2));
         }
         
-        function aStar(graph, start, end, segmentWeights) {
+        function aStar(graph, start, end) {
             if (start === end) return [start.split(',').map(Number)];
             if (!graph[start] || !graph[end]) return null;
         
@@ -1881,7 +1799,6 @@
                         cameFrom.set(neighbor, current);
                         gScore.set(neighbor, tentativeGScore);
                         fScore.set(neighbor, tentativeGScore + heuristic(neighbor, end));
-        
                         openSet.push(neighbor, fScore.get(neighbor));
                     }
                 }
@@ -1894,22 +1811,22 @@
         function calculateRealDistance(coord1, coord2) {
             const dx = coord1[0] - coord2[0];
             const dy = coord1[1] - coord2[1];
-            const pixelDistance = Math.sqrt(dx * dx + dy * dy);
-            return pixelDistance * SCALE_CORRECTION;
+            return Math.sqrt(dx * dx + dy * dy) * SCALE_CORRECTION;
         }
         
         function getColorForSegment(start, end) {
-            const startKey = start.join(',');
-            const endKey = end.join(',');
-            const segmentKey = `${startKey}-${endKey}`;
-            const reverseKey = `${endKey}-${startKey}`;
+            const segmentKey = `${start.join(',')}-${end.join(',')}`;
+            const reverseKey = `${end.join(',')}-${start.join(',')}`;
             const weight = segmentWeights[segmentKey] || segmentWeights[reverseKey];
-        
-            if (weight === 1) return '#000000';      // Завал
-            else if (weight === 2) return '#ff0000'; // Шкуродер
-            else if (weight === 3) return '#ffa500'; // Препятствие
-            else if (weight === 4) return '#0000ff'; // Вода
-            else return '#00ff00';                   // Свободный проход
+            
+            const colors = {
+                1: '#000000',      // Завал
+                2: '#ff0000',      // Шкуродер
+                3: '#ffa500',      // Препятствие
+                4: '#0000ff',      // Вода
+                default: '#00ff00' // Свободный проход
+            };
+            return colors[weight] || colors.default;
         }
         
         function buildFullRoute() {
@@ -1918,7 +1835,6 @@
                 return;
             }
             
-            // Проверяем, что граф создан
             if (Object.keys(graph).length === 0) {
                 showCustomAlert('Граф маршрутов не загружен. Проверьте файл tunnels_json.geojson');
                 return;
@@ -1926,16 +1842,11 @@
         
             showLoadingOverlay();
         
-            // Используем setTimeout для асинхронности
             setTimeout(() => {
                 try {
-                    // Удаляем старый маршрут
-                    if (routeLayer) {
-                        map.removeLayer(routeLayer);
-                        routeLayer = null;
-                    }
+                    if (routeLayer) map.removeLayer(routeLayer);
+                    routeLayer = null;
                     
-                    // Удаляем старые подписи точек маршрута
                     routePointMarkers.forEach(marker => map.removeLayer(marker));
                     routeLabelMarkers.forEach(marker => map.removeLayer(marker));
                     routePointMarkers = [];
@@ -1946,12 +1857,10 @@
                     let totalDistance = 0;
             
                     for (let i = 0; i < selectedPoints.length - 1; i++) {
-                        const start = selectedPoints[i];
-                        const end = selectedPoints[i + 1];
-                        const startKey = start.join(',');
-                        const endKey = end.join(',');
+                        const start = selectedPoints[i], end = selectedPoints[i + 1];
+                        const startKey = start.join(','), endKey = end.join(',');
             
-                        const segmentPath = aStar(graph, startKey, endKey, segmentWeights);
+                        const segmentPath = aStar(graph, startKey, endKey);
             
                         if (!segmentPath) {
                             showCustomAlert(`Не удалось найти путь между точками ${i+1} и ${i+2}`);
@@ -1959,23 +1868,19 @@
                             return;
                         }
             
-                        if (i === 0) fullRoutePath.push(...segmentPath);
-                        else fullRoutePath.push(...segmentPath.slice(1));
+                        fullRoutePath.push(...(i === 0 ? segmentPath : segmentPath.slice(1)));
             
                         for (let j = 1; j < segmentPath.length; j++) {
-                            const a = segmentPath[j - 1];
-                            const b = segmentPath[j];
+                            const a = segmentPath[j - 1], b = segmentPath[j];
                             totalDistance += calculateRealDistance(a, b);
             
-                            let coords;
-                            if (currentMapType === 'google-satellite') continue;
-                            else coords = [[a[1], a[0]], [b[1], b[0]]];
-            
-                            L.polyline(coords, {
-                                color: getColorForSegment(a, b),
-                                weight: 6,
-                                opacity: 0.8
-                            }).addTo(routeGroup);
+                            if (currentMapType !== 'google-satellite') {
+                                L.polyline([[a[1], a[0]], [b[1], b[0]]], {
+                                    color: getColorForSegment(a, b),
+                                    weight: 6,
+                                    opacity: 0.8
+                                }).addTo(routeGroup);
+                            }
                         }
                     }
             
@@ -1984,100 +1889,91 @@
                         document.getElementById('status').innerHTML = 
                             `Маршрут: <span class="route-distance">${totalDistance.toFixed(1)} м</span>`;
                         
-                        // Добавляем подписи к точкам маршрута (СТАРТ/ФИНИШ/номера) с высоким приоритетом
                         addRoutePointLabels();
-                        
-                        // Добавляем подписи к точкам на маршруте (из JSON) с низким приоритетом
                         addRouteJsonPointLabels();
                     }
-            
-                    // Обновляем список точек на маршрута
-                    updateRoutePointsList();
                     
+                    updateRoutePointsList();
                     updateRouteButtonsVisibility();
                     
                 } catch (error) {
                     console.error('Ошибка при построении маршрута:', error);
                     showCustomAlert('Ошибка при построении маршрута. Проверьте консоль для подробностей.');
                     
-                    // Восстанавливаем состояние при ошибке
                     if (selectedPoints.length > 0) {
                         document.getElementById('status').textContent = 
                             `Выбрано ${selectedPoints.length} точек. Ошибка построения.`;
                     }
                 } finally {
-                    // Всегда скрываем оверлей загрузки
                     hideLoadingOverlay();
+                    // АВТОМАТИЧЕСКОЕ ОТКРЫТИЕ ОКНА "НИТКА МАРШРУТА"
+                    setTimeout(() => {
+                        if (fullRoutePath.length > 0 && allPointsGeoJson) {
+                            const nearbyPoints = findPointsNearRoute(fullRoutePath, allPointsGeoJson, 2.5);
+                            if (nearbyPoints.length > 0) {
+                                document.getElementById('route-points-popup').style.display = 'block';
+                                document.getElementById('show-route-points-btn').textContent = '👁️';
+                                document.getElementById('show-route-points-btn').style.display = 'block';
+                            }
+                        }
+                    }, 500);
                 }
-            }, 10); // Минимальная задержка для показа оверлея
+            }, 10);
         }
         
         function addRoutePointLabels() {
-			// Удаляем старые подписи
-			routeLabelMarkers.forEach(marker => map.removeLayer(marker));
-			routeLabelMarkers = [];
-			
-			// Добавляем новые подписи
-			selectedPoints.forEach((pt, idx) => {
-				const latlng = [pt[1], pt[0]];
-				let labelText;
-				if (idx === 0) {
-					labelText = 'СТАРТ';
-				} else if (idx === selectedPoints.length - 1) {
-					labelText = 'ФИНИШ';
-				} else {
-					labelText = String(idx);
-				}
-				
-				const label = L.marker(latlng, {
-					icon: L.divIcon({
-						className: 'route-point-label',
-						html: `<div style="
-							background: linear-gradient(135deg, #ff9800, #ffb74d);
-							border: 2px solid #0d47a1; /* СИНЯЯ РАМКА ТОЛЬКО ЗДЕСЬ */
-							border-radius: 4px;
-							padding: 2px 6px;
-							color: #0d47a1;
-							font-weight: bold;
-							font-size: 12px;
-							white-space: nowrap;
-							text-shadow: 1px 1px 2px white;
-							box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-						">${labelText}</div>`,
-						iconSize: null,
-						iconAnchor: [0, -15]
-					}),
-					interactive: false,
-					zIndexOffset: 1000
-				}).addTo(map);
-				
-				routeLabelMarkers.push(label);
-				
-				// Обновляем стиль маркера
-				updatePointMarkerStyle(idx);
-			});
-		}
-        
-        function updatePointMarkerStyle(idx) {
-            // Обновляем стиль существующего маркера точки
-            if (pointMarkers[idx]) {
-                let color, fillColor;
-                if (idx === 0) {
-                    color = 'white'; // Белая обводка для СТАРТ
-                    fillColor = 'green';
-                } else if (idx === pointMarkers.length - 1) {
-                    color = 'white'; // Белая обводка для ФИНИШ
-                    fillColor = 'blue';
+            routeLabelMarkers.forEach(marker => map.removeLayer(marker));
+            routeLabelMarkers = [];
+            
+            selectedPoints.forEach((pt, idx) => {
+                const latlng = [pt[1], pt[0]];
+                const labelText = idx === 0 ? 'СТАРТ' : idx === selectedPoints.length - 1 ? 'ФИНИШ' : String(idx);
+                
+                // Для старта и финиша используем другой якорь, чтобы надпись была выше и ближе
+                let iconAnchor;
+                if (idx === 0 || idx === selectedPoints.length - 1) {
+                    // Для старта и финиша - надпись прямо над точкой
+                    iconAnchor = [5, 25];
                 } else {
-                    color = 'white'; // Белая обводка для промежуточных точек
-                    fillColor = 'red';
+                    // Для остальных точек - стандартное смещение
+                    iconAnchor = [10, 22];
                 }
                 
+                const label = L.marker(latlng, {
+                    icon: L.divIcon({
+                        className: 'route-point-label',
+                        html: `<div style="
+                            background: linear-gradient(135deg, #ff9800, #ffb74d);
+                            border: 2px solid #0d47a1;
+                            border-radius: 4px;
+                            padding: 2px 6px;
+                            color: #0d47a1;
+                            font-weight: bold;
+                            font-size: 12px;
+                            white-space: nowrap;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                            transform: translateY(-8px);
+                        ">${labelText}</div>`,
+                        iconSize: null,
+                        iconAnchor: iconAnchor
+                    }),
+                    interactive: false,
+                    zIndexOffset: 1000
+                }).addTo(map);
+                
+                routeLabelMarkers.push(label);
+                updatePointMarkerStyle(idx);
+            });
+        }
+        
+        function updatePointMarkerStyle(idx) {
+            if (pointMarkers[idx]) {
+                const fillColor = idx === 0 ? 'green' : idx === pointMarkers.length - 1 ? 'blue' : 'red';
                 pointMarkers[idx].setStyle({ 
-                    color: color,
+                    color: 'white',
                     fillColor: fillColor,
-                    weight: 2, // Толщина обводки
-                    className: 'route-point-marker' // Добавляем класс для стилизации
+                    weight: 2,
+                    className: 'route-point-marker'
                 });
             }
         }
@@ -2090,17 +1986,14 @@
             nearbyPoints.forEach(point => {
                 const latlng = [point.coords[1], point.coords[0]];
                 
-                // Проверяем, нет ли в этой точке подписи маршрута (СТАРТ/ФИНИШ/номер)
                 const hasRouteLabel = routeLabelMarkers.some(label => {
                     const labelLatLng = label.getLatLng();
                     return Math.abs(labelLatLng.lat - latlng[0]) < 0.0001 && 
                            Math.abs(labelLatLng.lng - latlng[1]) < 0.0001;
                 });
                 
-                // Если есть подпись маршрута, пропускаем эту точку
                 if (hasRouteLabel) return;
                 
-                // Маркер точки
                 const marker = L.circleMarker(latlng, {
                     radius: 5,
                     color: '#0000FF',
@@ -2110,7 +2003,6 @@
                 }).addTo(map);
                 routePointMarkers.push(marker);
                 
-                // Подпись точки (старый стиль - синий в голубой рамке) с низким приоритетом
                 const label = L.marker(latlng, {
                     icon: L.divIcon({
                         className: 'route-point-label-old',
@@ -2119,106 +2011,29 @@
                         iconAnchor: [0, -10]
                     }),
                     interactive: false,
-                    pane: 'markerPane' // Используем markerPane для низкого приоритета
+                    pane: 'markerPane'
                 }).addTo(map);
                 
-                // Устанавливаем низкий z-index
-                if (label.getElement()) {
-                    label.getElement().style.zIndex = '100';
-                }
-                
+                if (label.getElement()) label.getElement().style.zIndex = '100';
                 routeLabelMarkers.push(label);
             });
         }
         
-        // Функция для обновления видимости подписей в зависимости от зума
         function updateLabelVisibility() {
             const zoom = map.getZoom();
+            const hide = zoom < 0;
             
-            // Если зум меньше 0, скрываем подписи точек на маршруте (из JSON)
-            if (zoom < 0) {
-                routeLabelMarkers.forEach(label => {
-                    const element = label.getElement();
-                    if (element && element.classList.contains('route-point-label-old')) {
-                        element.classList.add('label-hidden');
-                    }
-                });
-            } else {
-                // Если зум 0 или больше, показываем все подписи
-                routeLabelMarkers.forEach(label => {
-                    const element = label.getElement();
-                    if (element && element.classList.contains('route-point-label-old')) {
-                        element.classList.remove('label-hidden');
-                    }
-                });
-            }
+            routeLabelMarkers.forEach(label => {
+                const element = label.getElement();
+                if (element && element.classList.contains('route-point-label-old')) {
+                    element.classList.toggle('label-hidden', hide);
+                }
+            });
             
-            // Подписи СТАРТ/ФИНИШ/номеров всегда видны на любом зуме
-            // Но они уже имеют максимальный приоритет
-            
-            // Обновляем видимость меток для текущей карты
             updateMarkersVisibilityForCurrentMap();
         }
         
-        function findPointsNearRoute(routeCoords, pointsGeoJson, maxDistance = 2.5) {
-            if (!pointsGeoJson || !pointsGeoJson.features) return [];
-            
-            const segments = [];
-            let totalLength = 0;
-            
-            for (let i = 0; i < routeCoords.length - 1; i++) {
-                const a = routeCoords[i];
-                const b = routeCoords[i + 1];
-                const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-                segments.push({ start: a, end: b, length: len, startDist: totalLength });
-                totalLength += len;
-            }
-            
-            const nearbyPoints = [];
-            const addedPointKeys = new Set();
-            
-            function getPointKey(coords) {
-                return `${coords[0].toFixed(3)},${coords[1].toFixed(3)}`;
-            }
-            
-            for (let segIndex = 0; segIndex < segments.length; segIndex++) {
-                const seg = segments[segIndex];
-                const { start, end } = seg;
-                const dx = end[0] - start[0];
-                const dy = end[1] - start[1];
-                const l2 = dx * dx + dy * dy;
-                
-                pointsGeoJson.features.forEach(feature => {
-                    if (feature.geometry.type !== "Point") return;
-                    const pt = feature.geometry.coordinates;
-                    const name = feature.properties?.Name;
-                    
-                    if (name == null || !Array.isArray(pt) || pt.length < 2) return;
-                    const pointKey = getPointKey(pt);
-                    if (addedPointKeys.has(pointKey)) return;
-                    
-                    let dist;
-                    if (l2 === 0) dist = Math.hypot(pt[0] - start[0], pt[1] - start[1]);
-                    else {
-                        const t = Math.max(0, Math.min(1, ((pt[0] - start[0]) * dx + (pt[1] - start[1]) * dy) / l2));
-                        const projX = start[0] + t * dx;
-                        const projY = start[1] + t * dy;
-                        dist = Math.hypot(pt[0] - projX, pt[1] - projY);
-                    }
-                    
-                    if (dist <= maxDistance) {
-                        const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((pt[0] - start[0]) * dx + (pt[1] - start[1]) * dy) / l2));
-                        const alongDist = seg.startDist + t * Math.sqrt(l2);
-                        nearbyPoints.push({ name, coords: pt, alongDist });
-                        addedPointKeys.add(pointKey);
-                    }
-                });
-            }
-            
-            nearbyPoints.sort((a, b) => a.alongDist - b.alongDist);
-            return nearbyPoints.map(p => ({ name: p.name, coords: p.coords }));
-        }
-        
+        // ==================== ОБНОВЛЕННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ СПИСКА ТОЧЕК ====================
         function updateRoutePointsList() {
             if (!allPointsGeoJson || fullRoutePath.length === 0) {
                 document.getElementById('show-route-points-btn').style.display = 'none';
@@ -2226,43 +2041,112 @@
                 return;
             }
             
+            // Находим точки, близкие к маршруту
             const nearbyPoints = findPointsNearRoute(fullRoutePath, allPointsGeoJson, 2.5);
             
             if (nearbyPoints.length > 0) {
                 const listHtml = nearbyPoints.map((p, idx) => {
                     const displayName = p.name.length > 15 ? p.name.substring(0, 12) + '...' : p.name;
-                    return `<div class="route-point-item" data-index="${idx}" data-lng="${p.coords[0]}" data-lat="${p.coords[1]}">• ${displayName}</div>`;
+                    const directionArrow = getDirectionArrow(p.directionAngle);
+                    
+                    return `<div class="route-point-item" data-index="${idx}" data-lng="${p.coords[0]}" data-lat="${p.coords[1]}" data-name="${p.name}">
+                        <span><strong>${idx + 1}.</strong> ${displayName}</span>
+                        <span class="direction-indicator" title="Направление движения после точки">${directionArrow}</span>
+                    </div>`;
                 }).join('');
                 
                 document.getElementById('route-points-list').innerHTML = listHtml;
                 document.getElementById('show-route-points-btn').style.display = 'block';
                 
-                // Добавляем обработчики кликов на точки
+                // Обновляем заголовок с количеством точек
+                const titleElement = document.querySelector('#route-points-popup > div:first-child');
+                if (titleElement) {
+                    const originalTitle = titleElement.innerHTML;
+                    titleElement.innerHTML = `<div style="font-size: 13px;">Нитка маршрута (${nearbyPoints.length} точек)</div>
+                                             <div style="font-size: 11px; font-weight: normal; margin-top: -2px;">
+                                                 (стрелки направления указаны относительно севера)
+                                             </div>`;
+                }
+                
+                // Добавляем обработчики кликов
                 document.querySelectorAll('.route-point-item').forEach((item, idx) => {
                     item.addEventListener('click', (e) => {
                         const el = e.target.closest('.route-point-item');
                         if (!el) return;
                         const lng = parseFloat(el.getAttribute('data-lng'));
                         const lat = parseFloat(el.getAttribute('data-lat'));
+                        const name = el.getAttribute('data-name');
+                        
                         if (isNaN(lng) || isNaN(lat)) return;
                         
                         let latlng;
                         if (currentMapType === 'google-satellite') {
-                            const wgs84Coords = epsg3857ToWgs84(lng, lat);
-                            latlng = [wgs84Coords[0], wgs84Coords[1]];
+                            latlng = epsg3857ToWgs84(lng, lat);
                         } else {
                             latlng = [lat, lng];
                         }
                         
-                        map.setView(latlng, map.getZoom(), {
-                            animate: true,
-                            duration: 0.3
+                        // Удаляем предыдущие маркеры подсветки
+                        clearSearchHighlight();
+                        
+                        // Плавный переход к точке
+                        map.flyTo(latlng, 3, {
+                            duration: 1.5,
+                            easeLinearity: 0.25
                         });
+                        
+                        // Небольшая задержка для завершения анимации
+                        setTimeout(() => {
+                            // Создаем оранжевый ореол
+                            const highlightMarker = L.circleMarker(latlng, {
+                                radius: 15,
+                                color: '#FF9800',
+                                fillColor: 'rgba(255, 152, 0, 0.3)',
+                                weight: 3,
+                                fillOpacity: 0.5,
+                                className: 'search-halo',
+                                pane: 'markerPane',
+                                zIndexOffset: 500
+                            }).addTo(map);
+                            
+                            // Добавляем popup с названием точки и порядковым номером
+                            const popupMarker = L.marker(latlng, {
+                                icon: L.divIcon({
+                                    className: 'search-highlight-marker',
+                                    html: '<div style="background-color: #FF9800; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px rgba(255, 152, 0, 0.8);"></div>',
+                                    iconSize: [20, 20],
+                                    iconAnchor: [10, 10]
+                                }),
+                                zIndexOffset: 1000
+                            }).bindPopup(`<b>${idx + 1}. ${name}</b><br>Порядковый номер в маршруте: ${idx + 1}`).openPopup().addTo(map);
+                            
+                            // Сохраняем маркеры
+                            if (!window.highlightMarkers) window.highlightMarkers = [];
+                            window.highlightMarkers.push(highlightMarker, popupMarker);
+                            
+                            // Убираем подсветку через 10 секунд
+                            setTimeout(() => {
+                                clearSearchHighlight();
+                            }, 10000);
+                        }, 1500);
                     });
                 });
             } else {
                 document.getElementById('show-route-points-btn').style.display = 'none';
                 document.getElementById('route-points-popup').style.display = 'none';
+            }
+        }
+
+        // Функция для очистки подсветки
+        function clearSearchHighlight() {
+            if (window.highlightMarkers) {
+                window.highlightMarkers.forEach(marker => {
+                    if (marker && map.hasLayer(marker)) {
+                        if (marker.closePopup) marker.closePopup();
+                        map.removeLayer(marker);
+                    }
+                });
+                window.highlightMarkers = [];
             }
         }
         
@@ -2293,41 +2177,31 @@
             fullRoutePath = [];
             routeLocked = false;
         
-            // Обновляем кнопки замка для всех карт
             document.getElementById('lock-btn').textContent = '🔓';
             document.getElementById('lock-btn-google').textContent = '🔓';
             
             document.getElementById('status').textContent = 'Готов к построению маршрута';
             document.getElementById('clear-route-btn').style.display = 'none';
             
-            // Обновляем видимость кнопок undo
-            updateRouteButtonsVisibility();
-            
-            document.getElementById('show-route-points-btn').style.display = 'none';
+            // Закрываем окно "Нитка маршрута"
             document.getElementById('route-points-popup').style.display = 'none';
+            document.getElementById('show-route-points-btn').style.display = 'none';
+            document.getElementById('show-route-points-btn').textContent = '📍';
+            
+            updateRouteButtonsVisibility();
         }
         
         function handleMapClick(e) {
-            console.log('handleMapClick called, isEditMode:', isEditMode, 'isUserPointsMode:', isUserPointsMode);
-            
-            // Если режим редактирования активен, обрабатываем клик по метке
             if (isEditMode) {
-                console.log('Режим редактирования активен, ищем метку');
                 handleEditModeClick(e);
                 return;
             }
             
-            // Если режим добавления меток активен
             if (isUserPointsMode) {
-                console.log('Режим добавления меток активен');
-                // Правильное преобразование координат для разных типов карт
                 let coords;
                 if (currentMapType === 'google-satellite') {
-                    // Для Google Satellite: latlng -> EPSG:3857
-                    const epsg3857 = wgs84ToEpsg3857(e.latlng.lat, e.latlng.lng);
-                    coords = epsg3857;
+                    coords = wgs84ToEpsg3857(e.latlng.lat, e.latlng.lng);
                 } else {
-                    // Для кастомных карт: меняем местами lat и lng
                     coords = [e.latlng.lng, e.latlng.lat];
                 }
                 pendingPointCoords = coords;
@@ -2335,7 +2209,6 @@
                 return;
             }
             
-            // Если режим построения маршрута активен
             if (menuOpen || segments.length === 0 || routeLocked) return;
             
             const click = [e.latlng.lng, e.latlng.lat];
@@ -2360,14 +2233,13 @@
             selectedPoints.push(nearest);
             const pointNumber = selectedPoints.length;
             
-            // Создаем маркер с белой обводкой
             const marker = L.circle([nearest[1], nearest[0]], {
-                radius: 3, // Немного увеличиваем радиус
-                color: 'white', // Белая обводка для всех точек
+                radius: 3,
+                color: 'white',
                 fillColor: pointNumber === 1 ? 'green' : pointNumber === selectedPoints.length ? 'blue' : 'red',
-                weight: 2, // Толщина обводки
+                weight: 2,
                 fillOpacity: 1,
-                className: 'route-point-marker' // Добавляем класс для стилизации
+                className: 'route-point-marker'
             }).addTo(map);
             
             pointMarkers.push(marker);
@@ -2379,35 +2251,30 @@
             }
             
             document.getElementById('clear-route-btn').style.display = 'block';
-            
-            // Обновляем видимость кнопок undo
             updateRouteButtonsVisibility();
         }
         
         function handleEditModeClick(e) {
-            console.log('handleEditModeClick called, ищем метку рядом с кликом:', e.latlng);
+            console.log('Обработка клика в режиме редактирования');
             
-            // Находим ближайшую пользовательскую метку
+            // Ищем ближайшую пользовательскую метку
             let minDist = Infinity;
             let nearestIndex = -1;
             
             userPointMarkers.forEach((marker, index) => {
                 const markerLatLng = marker.getLatLng();
                 const dist = e.latlng.distanceTo(markerLatLng);
-                console.log(`Метка ${index}: расстояние ${dist} пикселей`);
                 
-                // Увеличиваем радиус клика для удобства
-                if (dist < minDist && dist < 100) { // 100 пикселей - увеличенный радиус клика
+                // Увеличиваем радиус клика для удобства (100 пикселей)
+                if (dist < minDist && dist < 100) {
                     minDist = dist;
                     nearestIndex = index;
                 }
             });
             
             if (nearestIndex !== -1) {
-                console.log('Выбрана метка с индексом:', nearestIndex, 'расстояние:', minDist);
+                console.log('Найдена метка для редактирования:', nearestIndex);
                 selectPointForEditing(nearestIndex);
-                
-                // Показываем попап для редактирования
                 showEditPointPopup(nearestIndex);
                 
                 // Останавливаем всплытие события
@@ -2415,40 +2282,29 @@
                     e.originalEvent.stopPropagation();
                     e.originalEvent.preventDefault();
                 }
-            } else {
-                console.log('Не найдена метка рядом с кликом, минимальное расстояние:', minDist);
             }
         }
         
         function updateRoutePointStyles() {
             pointMarkers.forEach((m, idx) => {
-                let color = 'white'; // Белая обводка для всех точек
                 let fillColor;
-                if (idx === 0) {
-                    fillColor = 'green';
-                } else if (idx === pointMarkers.length - 1) {
-                    fillColor = 'blue';
-                } else {
-                    fillColor = 'red';
-                }
+                if (idx === 0) fillColor = 'green';
+                else if (idx === pointMarkers.length - 1) fillColor = 'blue';
+                else fillColor = 'red';
                 m.setStyle({ 
-                    color: color,
+                    color: 'white',
                     fillColor: fillColor,
                     weight: 2,
                     className: 'route-point-marker'
                 });
             });
             
-            // Перестраиваем маршрут с новыми подписями
-            if (selectedPoints.length > 1) {
-                buildFullRoute();
-            }
+            if (selectedPoints.length > 1) buildFullRoute();
         }
         
-        // ==================== ОБРАБОТКА ЗУМА ====================
         function onZoomEnd() {
             updateZoomDisplay();
-            updateLabelVisibility(); // Обновляем видимость подписей при изменении зума
+            updateLabelVisibility();
         }
         
         function undoLastPoint() {
@@ -2478,43 +2334,26 @@
         
         function updateRouteButtonsVisibility() {
             const clearBtn = document.getElementById('clear-route-btn');
+            const showBtn = selectedPoints.length > 0;
             
-            if (selectedPoints.length > 0) {
-                clearBtn.style.display = 'block';
-                
-                // Обновляем кнопки undo для обеих карт
-                if (currentMapType === 'google-satellite') {
-                    document.getElementById('undo-btn-google').style.display = 'flex';
-                } else {
-                    document.getElementById('undo-btn').style.display = 'flex';
-                }
-            } else {
-                clearBtn.style.display = 'none';
-                
-                // Скрываем кнопки undo для обеих карт
-                document.getElementById('undo-btn').style.display = 'none';
-                document.getElementById('undo-btn-google').style.display = 'none';
-            }
+            clearBtn.style.display = showBtn ? 'block' : 'none';
+            
+            const isGoogle = currentMapType === 'google-satellite';
+            document.getElementById(isGoogle ? 'undo-btn-google' : 'undo-btn').style.display = showBtn ? 'flex' : 'none';
         }
         
         // ==================== СЛОЙ КП 2025 ====================
         async function toggleKPLayer() {
-            const btn = currentMapType === 'google-satellite' 
-                ? document.getElementById('kp-layer-btn-google') 
-                : document.getElementById('kp-layer-btn');
+            const isGoogle = currentMapType === 'google-satellite';
+            const btn = document.getElementById(isGoogle ? 'kp-layer-btn-google' : 'kp-layer-btn');
             
             if (!kpLayerVisible) {
                 showLoadingOverlay("Загрузка КП 2025...");
                 
                 try {
-                    const data = await loadKpData();
+                    const data = await loadGeoJsonFile('kp_2025.geojson');
                     
-                    // Удаляем старые слои
                     if (kpLayer) map.removeLayer(kpLayer);
-                    kpMarkers = [];
-                    kpLabels = [];
-                    
-                    // Создаем новые слои
                     kpLayer = L.layerGroup();
                     
                     data.features.forEach(feature => {
@@ -2527,22 +2366,14 @@
                         
                         let latlng;
                         if (currentMapType === 'google-satellite') {
-                            const wgs84Coords = epsg3857ToWgs84(coords[0], coords[1]);
-                            latlng = [wgs84Coords[0], wgs84Coords[1]];
+                            latlng = epsg3857ToWgs84(coords[0], coords[1]);
                         } else {
                             latlng = [coords[1], coords[0]];
                         }
                         
-                        let markerColor, labelClass;
-                        if (type === 'тех. этап') {
-                            markerColor = '#ff0000';
-                            labelClass = 'kp-label-tech';
-                        } else {
-                            markerColor = '#00ff00';
-                            labelClass = 'kp-label-point';
-                        }
+                        const markerColor = type === 'тех. этап' ? '#ff0000' : '#00ff00';
+                        const labelClass = type === 'тех. этап' ? 'kp-label-tech' : 'kp-label-point';
                         
-                        // Маркер
                         const marker = L.circleMarker(latlng, {
                             radius: 4,
                             color: markerColor,
@@ -2551,7 +2382,6 @@
                             weight: 1
                         }).bindPopup(`<b>${name}</b><br>Тип: ${type}`);
                         
-                        // Подпись
                         const label = L.marker(latlng, {
                             icon: L.divIcon({
                                 className: labelClass,
@@ -2564,17 +2394,13 @@
                         
                         marker.addTo(kpLayer);
                         label.addTo(kpLayer);
-                        kpMarkers.push(marker);
-                        kpLabels.push(label);
                     });
                     
                     kpLayer.addTo(map);
                     kpLayerVisible = true;
-                    btn.classList.add('active');
+                    btn.classList.add('layer-active');
                     
-                    // Обновляем видимость меток для текущей карты
                     updateMarkersVisibilityForCurrentMap();
-                    
                     document.getElementById('status').textContent = `Слой КП 2025 загружен: ${data.features.length} точек`;
                     
                 } catch (error) {
@@ -2584,37 +2410,87 @@
                 
                 hideLoadingOverlay();
             } else {
-                if (kpLayer) {
-                    map.removeLayer(kpLayer);
-                    kpLayer = null;
-                    kpMarkers = [];
-                    kpLabels = [];
-                }
+                if (kpLayer) map.removeLayer(kpLayer);
+                kpLayer = null;
                 kpLayerVisible = false;
-                btn.classList.remove('active');
+                btn.classList.remove('layer-active');
                 document.getElementById('status').textContent = 'Слой КП 2025 скрыт';
             }
         }
         
-        // ==================== СЛОЙ ВСЕХ МЕТОК (JSON POINTS) ====================
-        async function toggleJsonPointsLayer() {
-            const btn = document.getElementById('json-points-btn');
+        // ==================== СЛОЙ ВСЕХ МЕТОК И РЕБЕР ====================
+        async function toggleAllEdgesLayer() {
+            const isGoogle = currentMapType === 'google-satellite';
+            const btn = document.getElementById('all-edges-btn');
             
-            if (!jsonPointsLayerVisible) {
-                showLoadingOverlay("Загрузка всех меток...");
+            if (!allEdgesLayerVisible) {
+                showLoadingOverlay("Загрузка всех меток и ребер...");
                 
                 try {
-                    const data = await loadPointsData();
+                    // Загружаем точки
+                    const pointsData = await loadGeoJsonFile('points_json.geojson');
+                    const tunnelsData = await loadGeoJsonFile('tunnels_json.geojson');
                     
-                    // Удаляем старые слои
-                    if (jsonPointsLayer) map.removeLayer(jsonPointsLayer);
-                    jsonPointsMarkers = [];
-                    jsonPointsLabels = [];
+                    // Удаляем старый слой, если есть
+                    if (allEdgesLayer) map.removeLayer(allEdgesLayer);
+                    allEdgesLayer = L.layerGroup();
                     
-                    // Создаем новые слои
-                    jsonPointsLayer = L.layerGroup();
+                    let edgeCount = 0;
+                    let pointCount = 0;
                     
-                    data.features.forEach(feature => {
+                    // Добавляем ребра (туннели)
+                    tunnelsData.features.forEach(f => {
+                        if (!f.geometry) return;
+                        
+                        let lines = [];
+                        if (f.geometry.type === 'LineString') lines = [f.geometry.coordinates];
+                        else if (f.geometry.type === 'MultiLineString') lines = f.geometry.coordinates;
+                        else return;
+                        
+                        let weight = f.properties?.weight || 5;
+                        
+                        lines.forEach(coords => {
+                            if (!Array.isArray(coords) || coords.length < 2) return;
+                            
+                            // Преобразуем координаты для Google Maps
+                            const latlngs = [];
+                            for (let i = 0; i < coords.length; i++) {
+                                const pt = coords[i];
+                                if (!Array.isArray(pt) || pt.length < 2) continue;
+                                
+                                let latlng;
+                                if (currentMapType === 'google-satellite') {
+                                    latlng = epsg3857ToWgs84(pt[0], pt[1]);
+                                } else {
+                                    latlng = [pt[1], pt[0]];
+                                }
+                                latlngs.push(latlng);
+                            }
+                            
+                            if (latlngs.length < 2) return;
+                            
+                            // Определяем цвет в зависимости от веса
+                            let color;
+                            switch(weight) {
+                                case 1: color = '#000000'; break; // Завал
+                                case 2: color = '#ff0000'; break; // Шкуродер
+                                case 3: color = '#ffa500'; break; // Препятствие
+                                case 4: color = '#0000ff'; break; // Вода
+                                default: color = '#00ff00'; // Свободный проход
+                            }
+                            
+                            // Создаем линию
+                            const polyline = L.polyline(latlngs, {
+                                color: color,
+                                weight: 3,
+                                opacity: 0.7
+                            }).addTo(allEdgesLayer);
+                            edgeCount++;
+                        });
+                    });
+                    
+                    // Добавляем точки
+                    pointsData.features.forEach(feature => {
                         if (feature.geometry.type !== 'Point') return;
                         const coords = feature.geometry.coordinates;
                         const name = feature.properties?.Name || '';
@@ -2623,22 +2499,19 @@
                         
                         let latlng;
                         if (currentMapType === 'google-satellite') {
-                            const wgs84Coords = epsg3857ToWgs84(coords[0], coords[1]);
-                            latlng = [wgs84Coords[0], wgs84Coords[1]];
+                            latlng = epsg3857ToWgs84(coords[0], coords[1]);
                         } else {
                             latlng = [coords[1], coords[0]];
                         }
                         
-                        // Маркер
                         const marker = L.circleMarker(latlng, {
-                            radius: 3,
+                            radius: 4,
                             color: '#5D4037',
                             fillColor: 'white',
                             weight: 1,
                             fillOpacity: 1
                         }).bindPopup(`<b>${name}</b>`);
                         
-                        // Подпись
                         const label = L.marker(latlng, {
                             icon: L.divIcon({
                                 className: 'point-label-from-json',
@@ -2649,37 +2522,133 @@
                             interactive: false
                         });
                         
-                        marker.addTo(jsonPointsLayer);
-                        label.addTo(jsonPointsLayer);
-                        jsonPointsMarkers.push(marker);
-                        jsonPointsLabels.push(label);
+                        marker.addTo(allEdgesLayer);
+                        label.addTo(allEdgesLayer);
+                        pointCount++;
                     });
                     
-                    jsonPointsLayer.addTo(map);
-                    jsonPointsLayerVisible = true;
-                    btn.classList.add('active');
+                    allEdgesLayer.addTo(map);
+                    allEdgesLayerVisible = true;
+                    btn.classList.add('layer-active');
                     
-                    // Обновляем видимость меток для текущей карты
                     updateMarkersVisibilityForCurrentMap();
                     
-                    document.getElementById('status').textContent = `Слой всех меток загружен: ${data.features.length} точек`;
+                    // Показываем легенду
+                    const legendHtml = `
+                        <div class="tunnel-legend">
+                            <div class="tunnel-legend-title">Легенда проходимости:</div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #00ff00;"></div>
+                                <span>Свободный проход</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #ffa500;"></div>
+                                <span>Препятствие</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #ff0000;"></div>
+                                <span>Шкуродер</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #0000ff;"></div>
+                                <span>Вода</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #000000;"></div>
+                                <span>Завал</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('status').innerHTML = 
+                        `Слой всех меток и ребер загружен: ${pointCount} точек и ${edgeCount} ребер. ${legendHtml}`;
                     
                 } catch (error) {
-                    console.error('Ошибка загрузки всех меток:', error);
-                    showCustomAlert('Ошибка загрузки слоя всех меток');
+                    console.error('Ошибка загрузки всех меток и ребер:', error);
+                    showCustomAlert('Ошибка загрузки слоя всех меток и ребер');
                 }
                 
                 hideLoadingOverlay();
             } else {
-                if (jsonPointsLayer) {
-                    map.removeLayer(jsonPointsLayer);
-                    jsonPointsLayer = null;
-                    jsonPointsMarkers = [];
-                    jsonPointsLabels = [];
+                if (allEdgesLayer) map.removeLayer(allEdgesLayer);
+                allEdgesLayer = null;
+                allEdgesLayerVisible = false;
+                btn.classList.remove('layer-active');
+                document.getElementById('status').textContent = 'Слой всех меток и ребер скрыт';
+            }
+        }
+        
+        // ==================== СЛОЙ ОПАСНЫХ МЕСТ ====================
+        async function toggleDangerLayer() {
+            const isGoogle = currentMapType === 'google-satellite';
+            const btn = document.getElementById(isGoogle ? 'danger-layer-btn-google' : 'danger-layer-btn');
+            
+            if (!dangerLayerVisible) {
+                showLoadingOverlay("Загрузка опасных мест...");
+                
+                try {
+                    const data = await loadGeoJsonFile('danger_points.geojson');
+                    
+                    if (dangerLayer) map.removeLayer(dangerLayer);
+                    dangerLayer = L.layerGroup();
+                    
+                    data.features.forEach(feature => {
+                        if (feature.geometry.type !== 'Point') return;
+                        const coords = feature.geometry.coordinates;
+                        const name = feature.properties?.Name || 'Опасное место';
+                        const description = feature.properties?.description || '';
+                        
+                        if (!coords || coords.length < 2) return;
+                        
+                        let latlng;
+                        if (currentMapType === 'google-satellite') {
+                            latlng = epsg3857ToWgs84(coords[0], coords[1]);
+                        } else {
+                            latlng = [coords[1], coords[0]];
+                        }
+                        
+                        const marker = L.marker(latlng, {
+                            icon: L.divIcon({
+                                className: 'danger-marker',
+                                html: '<span style="font-size: 24px">🚷</span>',
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        }).bindPopup(`<b>${name}</b>${description ? '<br>' + description : ''}`);
+                        
+                        const label = L.marker(latlng, {
+                            icon: L.divIcon({
+                                className: 'danger-point-label',
+                                html: name.length > 15 ? name.substring(0, 12) + '...' : name,
+                                iconSize: null,
+                                iconAnchor: [0, -15]
+                            }),
+                            interactive: false
+                        });
+                        
+                        marker.addTo(dangerLayer);
+                        label.addTo(dangerLayer);
+                    });
+                    
+                    dangerLayer.addTo(map);
+                    dangerLayerVisible = true;
+                    btn.classList.add('layer-active');
+                    
+                    updateMarkersVisibilityForCurrentMap();
+                    document.getElementById('status').textContent = `Слой опасных мест загружен: ${data.features.length} точек`;
+                    
+                } catch (error) {
+                    console.error('Ошибка загрузки опасных мест:', error);
+                    showCustomAlert('Ошибка загрузки слоя опасных мест');
                 }
-                jsonPointsLayerVisible = false;
-                btn.classList.remove('active');
-                document.getElementById('status').textContent = 'Слой всех меток скрыт';
+                
+                hideLoadingOverlay();
+            } else {
+                if (dangerLayer) map.removeLayer(dangerLayer);
+                dangerLayer = null;
+                dangerLayerVisible = false;
+                btn.classList.remove('layer-active');
+                document.getElementById('status').textContent = 'Слой опасных мест скрыт';
             }
         }
         
@@ -2750,8 +2719,6 @@
         }
         
         function displayUserPoints() {
-            console.log('Отображение пользовательских меток');
-            
             // Удаляем старые слои
             if (userPointsLayer) {
                 map.removeLayer(userPointsLayer);
@@ -2772,8 +2739,7 @@
                 
                 let latlng;
                 if (currentMapType === 'google-satellite') {
-                    const wgs84Coords = epsg3857ToWgs84(coords[0], coords[1]);
-                    latlng = [wgs84Coords[0], wgs84Coords[1]];
+                    latlng = epsg3857ToWgs84(coords[0], coords[1]);
                 } else {
                     latlng = [coords[1], coords[0]];
                 }
@@ -2830,7 +2796,7 @@
         }
         
         function startEditMode() {
-            console.log('startEditMode called');
+            console.log('Активация режима редактирования');
             isEditMode = true;
             isUserPointsMode = false;
             
@@ -2847,7 +2813,7 @@
         }
         
         function cancelEditMode() {
-            console.log('cancelEditMode called');
+            console.log('Отмена режима редактирования');
             isEditMode = false;
             isUserPointsMode = false;
             
@@ -2873,7 +2839,7 @@
         }
         
         function updateMarkersForEditMode() {
-            console.log('updateMarkersForEditMode called, isEditMode:', isEditMode);
+            console.log('Обновление стилей маркеров, режим редактирования:', isEditMode);
             
             userPointMarkers.forEach((marker, index) => {
                 const element = marker.getElement();
@@ -2894,7 +2860,7 @@
         }
         
         function selectPointForEditing(index) {
-            console.log('selectPointForEditing called, index:', index);
+            console.log('Выбор метки для редактирования:', index);
             
             // Снимаем выделение с предыдущей метки
             if (selectedPointIndex !== null && userPointMarkers[selectedPointIndex]) {
@@ -2932,7 +2898,7 @@
         }
         
         function showEditPointPopup(index) {
-            console.log('showEditPointPopup called, index:', index);
+            console.log('Показ попапа редактирования для метки:', index);
             const feature = userPointsData.features[index];
             if (!feature) {
                 console.error('Метка не найдена по индексу:', index);
@@ -3067,182 +3033,137 @@
             document.getElementById('bookmark-name').value = '';
         }
         
-		 // ==================== УЛУЧШЕННЫЙ ПОИСК ТОЧЕК (Android стиль) ====================
-		function performSearch(query) {
-			const resultsContainer = document.getElementById('search-results-panel');
-			resultsContainer.innerHTML = '';
-			
-			if (query.trim()) {
-				lastSearchQuery = query.trim();
-				localStorage.setItem('lastSearchQuery', lastSearchQuery);
-			}
-			
-			if (!query.trim() || !allPointsGeoJson) {
-				resultsContainer.style.display = 'none';
-				return;
-			}
+        // ==================== УЛУЧШЕННЫЙ ПОИСК ТОЧЕК ====================
+        function performSearch(query) {
+            const resultsContainer = document.getElementById('search-results-panel');
+            resultsContainer.innerHTML = '';
+            
+            if (query.trim()) {
+                lastSearchQuery = query.trim();
+                localStorage.setItem('lastSearchQuery', lastSearchQuery);
+            }
+            
+            if (!query.trim() || !allPointsGeoJson) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
 
-			const q = query.trim().toLowerCase();
-			const matches = [];
+            const q = query.trim().toLowerCase();
+            const matches = [];
 
-			allPointsGeoJson.features.forEach(feature => {
-				if (feature.geometry.type !== "Point") return;
-				const name = feature.properties?.Name;
-				const coords = feature.geometry.coordinates;
-				if (!name || !coords || coords.length < 2) return;
-				
-				const nameLower = name.toLowerCase();
-				if (nameLower.includes(q)) {
-					let priority = 2;
-					if (nameLower === q) priority = 0;
-					else if (nameLower.startsWith(q)) priority = 1;
-					matches.push({ name, coords, priority });
-				}
-			});
+            allPointsGeoJson.features.forEach(feature => {
+                if (feature.geometry.type !== "Point") return;
+                const name = feature.properties?.Name;
+                const coords = feature.geometry.coordinates;
+                if (!name || !coords || coords.length < 2) return;
+                
+                const nameLower = name.toLowerCase();
+                if (nameLower.includes(q)) {
+                    let priority = 2;
+                    if (nameLower === q) priority = 0;
+                    else if (nameLower.startsWith(q)) priority = 1;
+                    matches.push({ name, coords, priority });
+                }
+            });
 
-			if (matches.length === 0) {
-				resultsContainer.style.display = 'none';
-				return;
-			}
+            if (matches.length === 0) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
 
-			matches.sort((a, b) => {
-				if (a.priority !== b.priority) return a.priority - b.priority;
-				return a.name.localeCompare(b.name, 'ru');
-			});
+            matches.sort((a, b) => {
+                if (a.priority !== b.priority) return a.priority - b.priority;
+                return a.name.localeCompare(b.name, 'ru');
+            });
 
-			matches.slice(0, 20).forEach(item => {
-				const div = document.createElement('div');
-				div.className = 'search-result-item-panel';
-				div.textContent = item.name;
-				div.setAttribute('data-lng', item.coords[0]);
-				div.setAttribute('data-lat', item.coords[1]);
-				div.addEventListener('click', (e) => {
-					const lng = parseFloat(e.target.getAttribute('data-lng'));
-					const lat = parseFloat(e.target.getAttribute('data-lat'));
-					if (!isNaN(lng) && !isNaN(lat)) {
-						let targetLat, targetLng;
-						if (currentMapType === 'google-satellite') {
-							const wgs84Coords = epsg3857ToWgs84(lng, lat);
-							targetLat = wgs84Coords[0];
-							targetLng = wgs84Coords[1];
-						} else {
-							targetLat = lat;
-							targetLng = lng;
-						}
-						
-						// Полностью переписанная логика перехода
-						const targetPoint = L.latLng(targetLat, targetLng);
-						const currentCenter = map.getCenter();
-						const currentZoom = map.getZoom();
-						
-						// Сначала проверяем расстояние между текущим центром и целевой точкой
-						const distance = currentCenter.distanceTo(targetPoint);
-						
-						// Определяем зум в зависимости от типа карты
-						const targetZoom = currentMapType === 'google-satellite' ? 18 : 2;
-						
-						// Если расстояние большое (точка далеко), сначала переходим на зум 0/10, 
-						// чтобы увидеть общую картину, затем плавно приближаем
-						if (distance > 1000) { // Большое расстояние
-							if (currentMapType === 'google-satellite') {
-								// Для Google Satellite сначала идем на 10 зум
-								map.setView(targetPoint, 10, {
-									animate: true,
-									duration: 0.5
-								});
-								
-								// Затем через небольшую паузу идем на целевой зум
-								setTimeout(() => {
-									map.setView(targetPoint, targetZoom, {
-										animate: true,
-										duration: 0.7
-									});
-								}, 600);
-							} else {
-								// Для базовых карт сначала идем на зум -1
-								map.setView(targetPoint, -1, {
-									animate: true,
-									duration: 0.5
-								});
-								
-								// Затем через небольшую паузу идем на зум 2
-								setTimeout(() => {
-									map.setView(targetPoint, 2, {
-										animate: true,
-										duration: 0.7
-									});
-								}, 600);
-							}
-						} else {
-							// Если точка относительно близко, просто центрируем с целевым зумом
-							if (Math.abs(currentZoom - targetZoom) > 2) {
-								// Если разница в зуме большая, делаем анимированный переход
-								map.setView(targetPoint, targetZoom, {
-									animate: true,
-									duration: 0.7
-								});
-							} else {
-								// Если разница в зуме небольшая, просто центрируем
-								map.setView(targetPoint, targetZoom, {
-									animate: true,
-									duration: 0.5
-								});
-							}
-						}
+            matches.slice(0, 20).forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item-panel';
+                div.textContent = item.name;
+                div.setAttribute('data-lng', item.coords[0]);
+                div.setAttribute('data-lat', item.coords[1]);
+                div.addEventListener('click', (e) => {
+                    const lng = parseFloat(e.target.getAttribute('data-lng'));
+                    const lat = parseFloat(e.target.getAttribute('data-lat'));
+                    if (!isNaN(lng) && !isNaN(lat)) {
+                        let targetLat, targetLng;
+                        if (currentMapType === 'google-satellite') {
+                            const wgs84Coords = epsg3857ToWgs84(lng, lat);
+                            targetLat = wgs84Coords[0];
+                            targetLng = wgs84Coords[1];
+                        } else {
+                            targetLat = lat;
+                            targetLng = lng;
+                        }
+                        
+                        // Сохраняем текущую позицию для плавного перехода
+                        const currentCenter = map.getCenter();
+                        const currentZoom = map.getZoom();
+                        const targetZoom = currentMapType === 'google-satellite' ? 18 : 2;
+                        
+                        // Плавный переход к точке с увеличением
+                        map.flyTo([targetLat, targetLng], targetZoom, {
+                            duration: 2.5,
+                            easeLinearity: 0.25
+                        });
 
-						// Удаляем предыдущие маркеры подсветки
-						if (searchHighlightMarker) {
-							map.removeLayer(searchHighlightMarker);
-						}
-						if (searchHaloMarker) {
-							map.removeLayer(searchHaloMarker);
-						}
-						
-						// Создаем ореол вокруг точки
-						searchHaloMarker = L.circleMarker([targetLat, targetLng], {
-							radius: 20,
-							color: '#0066cc',
-							fillColor: 'rgba(0, 102, 204, 0.2)',
-							weight: 1,
-							fillOpacity: 0.5,
-							className: 'search-halo'
-						}).addTo(map);
-						
-						// Создаем синий маркер для подсветки найденной точки
-						searchHighlightMarker = L.marker([targetLat, targetLng], {
-							icon: L.divIcon({
-								className: 'search-highlight-marker',
-								html: '<div style="background-color: #0066cc; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px rgba(0, 102, 204, 0.8);"></div>',
-								iconSize: [24, 24],
-								iconAnchor: [12, 12]
-							}),
-							zIndexOffset: 10000
-						}).addTo(map);
-						
-						// Показываем всплывающую подсказку с названием точки
-						searchHighlightMarker.bindPopup(`<b>${item.name}</b>`).openPopup();
+                        // Удаляем предыдущие маркеры подсветки
+                        if (searchHighlightMarker) {
+                            map.removeLayer(searchHighlightMarker);
+                            searchHighlightMarker = null;
+                        }
+                        if (searchHaloMarker) {
+                            map.removeLayer(searchHaloMarker);
+                            searchHaloMarker = null;
+                        }
+                        
+                        // Небольшая задержка для завершения анимации перелета
+                        setTimeout(() => {
+                            // Создаем ореол вокруг точки
+                            searchHaloMarker = L.circleMarker([targetLat, targetLng], {
+                                radius: 20,
+                                color: '#0066cc',
+                                fillColor: 'rgba(0, 102, 204, 0.2)',
+                                weight: 1,
+                                fillOpacity: 0.5,
+                                className: 'search-halo'
+                            }).addTo(map);
+                            
+                            // Создаем синий маркер для подсветки найденной точки
+                            searchHighlightMarker = L.marker([targetLat, targetLng], {
+                                icon: L.divIcon({
+                                    className: 'search-highlight-marker',
+                                    html: '<div style="background-color: #0066cc; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 8px rgba(0, 102, 204, 0.8);"></div>',
+                                    iconSize: [24, 24],
+                                    iconAnchor: [12, 12]
+                                }),
+                                zIndexOffset: 10000
+                            }).bindPopup(`<b>${item.name}</b>`).openPopup().addTo(map);
 
-						// Убираем подсветку через 6 секунд
-						setTimeout(() => {
-							if (searchHighlightMarker) {
-								map.removeLayer(searchHighlightMarker);
-								searchHighlightMarker = null;
-							}
-							if (searchHaloMarker) {
-								map.removeLayer(searchHaloMarker);
-								searchHaloMarker = null;
-							}
-						}, 6000);
+                            // Убираем подсветку через 10 секунд
+                            setTimeout(() => {
+                                if (searchHighlightMarker) {
+                                    // Закрываем popup перед удалением
+                                    searchHighlightMarker.closePopup();
+                                    map.removeLayer(searchHighlightMarker);
+                                    searchHighlightMarker = null;
+                                }
+                                if (searchHaloMarker) {
+                                    map.removeLayer(searchHaloMarker);
+                                    searchHaloMarker = null;
+                                }
+                            }, 10000);
+                        }, 2500);
 
-						toggleSearchPanel();
-					}
-				});
-				resultsContainer.appendChild(div);
-			});
+                        toggleSearchPanel();
+                    }
+                });
+                resultsContainer.appendChild(div);
+            });
 
-			resultsContainer.style.display = 'block';
-		}
-		
+            resultsContainer.style.display = 'block';
+        }
+        
         function toggleSearchPanel() {
             const searchPanel = document.getElementById('search-panel');
             const searchInput = document.getElementById('search-input');
@@ -3286,10 +3207,6 @@
             toggleSearchPanel();
         }
 
-        function hideSearchPointsPopup() {
-            toggleSearchPanel();
-        }
-        
         function goToPoint(point) {
             if (!point) return;
             
@@ -3297,18 +3214,15 @@
             let latlng;
             
             if (currentMapType === 'google-satellite') {
-                const wgs84Coords = epsg3857ToWgs84(x, y);
-                latlng = [wgs84Coords[0], wgs84Coords[1]];
+                latlng = epsg3857ToWgs84(x, y);
             } else {
                 latlng = [y, x];
             }
             
-            // Устанавливаем зум в зависимости от типа карты
-            const zoomLevel = currentMapType === 'google-satellite' ? 18 : 0;
-            
-            map.setView(latlng, zoomLevel, {
-                animate: true,
-                duration: 0.5
+            // Плавный переход к точке
+            map.flyTo(latlng, currentMapType === 'google-satellite' ? 18 : 0, {
+                duration: 2.5,
+                easeLinearity: 0.25
             });
             
             // Показываем всплывающую подсказку с названием точки
@@ -3324,7 +3238,7 @@
             document.getElementById('status').textContent = `Переход к точке: ${point.name}`;
         }
         
-        // ==================== СОХРАНЕНИЕ/ЗАГРУЗКА МАРШРУТОВ ====================
+        // ==================== СОХРАНЕНИЕ/ЗАГРУЗКА ====================
         function saveRoute() {
             const routeName = document.getElementById('route-name').value.trim();
             if (!routeName) {
@@ -3377,35 +3291,26 @@
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!data.points || !Array.isArray(data.points)) {
-                        throw new Error('Неверный формат файла');
-                    }
+                    if (!data.points || !Array.isArray(data.points)) throw new Error('Неверный формат файла');
                     
                     clearRoute();
                     selectedPoints = data.points.map(pt => [...pt]);
                     
-                    // Добавляем маркеры с белой обводкой
                     selectedPoints.forEach((pt, idx) => {
-                        let fillColor;
-                        if (idx === 0) fillColor = 'green';
-                        else if (idx === selectedPoints.length - 1) fillColor = 'blue';
-                        else fillColor = 'red';
-                        
+                        const fillColor = idx === 0 ? 'green' : idx === selectedPoints.length - 1 ? 'blue' : 'red';
                         const marker = L.circle([pt[1], pt[0]], {
                             radius: 3,
-                            color: 'white', // Белая обводка
+                            color: 'white',
                             fillColor: fillColor,
                             weight: 2,
                             fillOpacity: 1,
                             className: 'route-point-marker'
                         }).addTo(map);
-                        
                         pointMarkers.push(marker);
                     });
                     
                     buildFullRoute();
                     showCustomAlert(`Маршрут "${data.name || 'Без названия'}" загружен`);
-                    
                 } catch (error) {
                     showCustomAlert('Ошибка загрузки файла: ' + error.message);
                 }
@@ -3418,19 +3323,13 @@
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (data.type !== 'FeatureCollection') {
-                        throw new Error('Неверный формат GeoJSON');
-                    }
+                    if (data.type !== 'FeatureCollection') throw new Error('Неверный формат GeoJSON');
                     
                     userPointsData = data;
                     saveUserPoints();
                     
-                    if (userPointsLayerVisible) {
-                        displayUserPoints();
-                    }
-                    
+                    if (userPointsLayerVisible) displayUserPoints();
                     showCustomAlert('Метки успешно загружены');
-                    
                 } catch (error) {
                     showCustomAlert('Ошибка загрузки файла: ' + error.message);
                 }
@@ -3445,19 +3344,19 @@
 
             showLoadingOverlay("Переключение карты...");
             
-            // Сохраняем состояние слоев
             const wasKpVisible = kpLayerVisible;
             const wasUserPointsVisible = userPointsLayerVisible;
-            const wasJsonPointsVisible = jsonPointsLayerVisible;
+            const wasAllEdgesVisible = allEdgesLayerVisible;
+            const wasDangerVisible = dangerLayerVisible;
             const wasEditMode = isEditMode;
             
-            // Удаляем все слои
             if (entranceMarker) map.removeLayer(entranceMarker);
             if (currentImageOverlay) map.removeLayer(currentImageOverlay);
             if (googleSatelliteLayer) map.removeLayer(googleSatelliteLayer);
             if (kpLayer) map.removeLayer(kpLayer);
             if (userPointsLayer) map.removeLayer(userPointsLayer);
-            if (jsonPointsLayer) map.removeLayer(jsonPointsLayer);
+            if (allEdgesLayer) map.removeLayer(allEdgesLayer);
+            if (dangerLayer) map.removeLayer(dangerLayer);
             if (routeLayer) map.removeLayer(routeLayer);
             
             entranceMarker = currentImageOverlay = googleSatelliteLayer = null;
@@ -3471,7 +3370,7 @@
                     maxZoom: 21,
                     minZoom: 10,
                     subdomains: ['0','1','2','3'],
-                    attribution: '© Google'
+                    attribution: false // Отключаем аттрибуцию
                 }).addTo(map);
 
                 setTimeout(() => {
@@ -3480,28 +3379,14 @@
                     const [lat, lng] = epsg3857ToWgs84(x, y);
                     map.setView([lat, lng], 17);
 
-                    // Обновляем видимость элементов управления
                     updateControlsVisibility();
                     
-                    // Восстанавливаем слои для Google Satellite
-                    if (wasKpVisible) {
-                        // Для Google Satellite загружаем данные КП с новыми координатами
-                        toggleKPLayer();
-                    }
-                    if (wasUserPointsVisible && userPointsData.features.length > 0) {
-                        // Перезагружаем пользовательские метки с новыми координатами
-                        displayUserPoints();
-                    }
-                    if (wasJsonPointsVisible) {
-                        // Для Google Satellite загружаем данные точек с новыми координатами
-                        toggleJsonPointsLayer();
-                    }
+                    if (wasKpVisible) toggleKPLayer();
+                    if (wasUserPointsVisible && userPointsData.features.length > 0) displayUserPoints();
+                    if (wasAllEdgesVisible) toggleAllEdgesLayer();
+                    if (wasDangerVisible) toggleDangerLayer();
                     
-                    // Обновляем видимость меток после загрузки
-                    setTimeout(() => {
-                        updateMarkersVisibilityForCurrentMap();
-                    }, 100);
-                    
+                    setTimeout(() => updateMarkersVisibilityForCurrentMap(), 100);
                     hideLoadingOverlay();
                 }, 100);
             } else {
@@ -3509,14 +3394,9 @@
                 map.options.minZoom = -2;
                 map.options.maxZoom = 4;
                 
-                // Обновляем видимость элементов управления
                 updateControlsVisibility();
                 
-                // Убедитесь, что mapBounds определен
-                if (!mapBounds) {
-                    mapBounds = [[0, 0], [1000, 1000]];
-                }
-
+                if (!mapBounds) mapBounds = [[0, 0], [1000, 1000]];
                 currentImageOverlay = L.imageOverlay(mapType, mapBounds, { opacity: 1 }).addTo(map);
 
                 setTimeout(() => {
@@ -3525,29 +3405,14 @@
                     const centerY = (mapBounds[0][0] + mapBounds[1][0]) / 2;
                     map.setView([centerY, centerX], -1);
 
-                    // Восстанавливаем слои для базовых карт
-                    if (wasKpVisible) {
-                        // Для базовых карт перезагружаем данные КП с исходными координатами
-                        toggleKPLayer();
-                    }
-                    if (wasUserPointsVisible && userPointsData.features.length > 0) {
-                        // Перезагружаем пользовательские метки с исходными координатами
-                        displayUserPoints();
-                    }
-                    if (selectedPoints.length > 1) {
-                        buildFullRoute();
-                    }
+                    if (wasKpVisible) toggleKPLayer();
+                    if (wasUserPointsVisible && userPointsData.features.length > 0) displayUserPoints();
+                    if (wasAllEdgesVisible) toggleAllEdgesLayer();
+                    if (wasDangerVisible) toggleDangerLayer();
+                    if (selectedPoints.length > 1) buildFullRoute();
+                    if (wasEditMode && wasUserPointsVisible) startEditMode();
                     
-                    // Восстанавливаем режим редактирования, если он был активен
-                    if (wasEditMode && wasUserPointsVisible) {
-                        startEditMode();
-                    }
-                    
-                    // Обновляем видимость меток после загрузка
-                    setTimeout(() => {
-                        updateMarkersVisibilityForCurrentMap();
-                    }, 100);
-                    
+                    setTimeout(() => updateMarkersVisibilityForCurrentMap(), 100);
                     hideLoadingOverlay();
                 }, 100);
             }
@@ -3558,16 +3423,13 @@
             document.getElementById('status').textContent = 'Загрузка данных карты...';
             
             try {
-                // Проверяем доступность файлов
                 const fileChecks = await Promise.allSettled(
                     REQUIRED_FILES.map(file => fetch(file))
                 );
                 
                 const missingFiles = [];
                 fileChecks.forEach((result, index) => {
-                    if (result.status === 'rejected') {
-                        missingFiles.push(REQUIRED_FILES[index]);
-                    }
+                    if (result.status === 'rejected') missingFiles.push(REQUIRED_FILES[index]);
                 });
                 
                 if (missingFiles.length > 0) {
@@ -3576,27 +3438,21 @@
                 }
                 
                 await loadTunnelsData();
-                await loadPointsData();
+                allPointsGeoJson = await loadGeoJsonFile('points_json.geojson');
                 
-                // Проверяем, что данные загрузились
-                if (segments.length === 0) {
-                    throw new Error('Не удалось загрузить данные туннелей');
-                }
+                // Рассчитываем общую длину штреков
+                calculateTotalTunnelLength();
                 
-                currentImageOverlay = L.imageOverlay('byaki.png', mapBounds, {
-                    opacity: 1
-                }).addTo(map);
+                if (segments.length === 0) throw new Error('Не удалось загрузить данные туннелей');
                 
+                currentImageOverlay = L.imageOverlay('byaki.png', mapBounds, { opacity: 1 }).addTo(map);
                 addEntranceMarker();
                 
-                // Устанавливаем правильный центр и зум
                 const centerX = (mapBounds[0][1] + mapBounds[1][1]) / 2;
                 const centerY = (mapBounds[0][0] + mapBounds[1][0]) / 2;
                 map.setView([centerY, centerX], -1);
                 
                 loadUserPoints();
-                
-                // Инициализируем видимость элементов управления
                 updateControlsVisibility();
                 
                 document.getElementById('status').textContent = 'Готов к построению маршрута. Кликните на схему для выбора точек.';
@@ -3606,11 +3462,8 @@
                 document.getElementById('status').textContent = 'Ошибка загрузки карты';
                 showCustomAlert(`Ошибка загрузки данных карты: ${error.message}. Проверьте наличие файлов в папке.`);
                 
-                // Создаём временные границы, если загрузка не удалась
                 mapBounds = [[0, 0], [1000, 1000]];
-                currentImageOverlay = L.imageOverlay('byaki.png', mapBounds, {
-                    opacity: 0.5
-                }).addTo(map);
+                currentImageOverlay = L.imageOverlay('byaki.png', mapBounds, { opacity: 0.5 }).addTo(map);
             }
         }
         
@@ -3618,24 +3471,17 @@
         document.addEventListener('DOMContentLoaded', () => {
             initializeMap();
             
-            // Обработчик для закрытия выпадающих меню при клике вне их
             document.addEventListener('click', (e) => {
                 const dropdown = document.getElementById('dropdown-menu');
                 const menuBtn = document.getElementById('menu-button');
                 const searchPanel = document.getElementById('search-panel');
                 
-                // Закрываем основное меню
-                if (menuOpen && 
-                    !dropdown.contains(e.target) && 
-                    !menuBtn.contains(e.target)) {
+                if (menuOpen && !dropdown.contains(e.target) && !menuBtn.contains(e.target)) {
                     menuOpen = false;
                     dropdown.classList.remove('active');
                 }
                 
-                // Закрываем панель поиска при клике вне ее
-                if (searchPanelVisible && 
-                    !searchPanel.contains(e.target) && 
-                    e.target.id !== 'search-points-btn') {
+                if (searchPanelVisible && !searchPanel.contains(e.target) && e.target.id !== 'search-points-btn') {
                     toggleSearchPanel();
                 }
             });
@@ -3646,143 +3492,76 @@
                 document.getElementById('dropdown-menu').classList.toggle('active', menuOpen);
             });
             
-            document.getElementById('dropdown-menu').addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-            
-            document.getElementById('zoom-in').addEventListener('click', () => {
-                if (map.getZoom() < map.getMaxZoom()) map.zoomIn();
-                updateZoomDisplay();
-            });
-            
-            document.getElementById('zoom-out').addEventListener('click', () => {
-                if (map.getZoom() > map.getMinZoom()) map.zoomOut();
-                updateZoomDisplay();
-            });
-            
+            document.getElementById('zoom-in').addEventListener('click', () => map.getZoom() < map.getMaxZoom() && map.zoomIn());
+            document.getElementById('zoom-out').addEventListener('click', () => map.getZoom() > map.getMinZoom() && map.zoomOut());
             map.on('zoomend', onZoomEnd);
             
-            document.getElementById('background-select').addEventListener('change', function(e) {
-                switchMapLayer(e.target.value);
-            });
+            document.getElementById('background-select').addEventListener('change', (e) => switchMapLayer(e.target.value));
             
-            document.getElementById('save-route').addEventListener('click', (e) => {
+            const setupButton = (id, handler) => document.getElementById(id).addEventListener('click', (e) => {
                 e.stopPropagation();
-                saveRoute();
+                handler();
             });
             
-            document.getElementById('load-route').addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.getElementById('route-file-input').click();
-            });
-            
-            document.getElementById('route-file-input').addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    loadRouteFromFile(e.target.files[0]);
-                }
-            });
-            
-            document.getElementById('save-bookmark').addEventListener('click', (e) => {
-                e.stopPropagation();
-                saveUserPointsToFile();
-            });
-            
-            document.getElementById('load-bookmark').addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.getElementById('bookmark-file-input').click();
-            });
-            
-            document.getElementById('bookmark-file-input').addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    loadUserPointsFromFile(e.target.files[0]);
-                }
-            });
-            
-            document.getElementById('clear-route-btn').addEventListener('click', clearRoute);
-            
-            document.getElementById('show-route-points-btn').addEventListener('click', toggleRoutePointsPopup);
-            
-            // Обработчики для кнопки undo на базовых картах
-            document.getElementById('undo-btn').addEventListener('click', undoLastPoint);
-            
-            // Обработчики для кнопки undo на Google карте
-            document.getElementById('undo-btn-google').addEventListener('click', undoLastPoint);
-            
-            // Обработчики для кнопки замка на базовых картах
-            document.getElementById('lock-btn').addEventListener('click', () => {
-                routeLocked = !routeLocked;
-                const lockBtn = document.getElementById('lock-btn');
-                const lockBtnGoogle = document.getElementById('lock-btn-google');
-                
-                lockBtn.textContent = routeLocked ? '🔒' : '🔓';
-                lockBtnGoogle.textContent = routeLocked ? '🔒' : '🔓';
-                
-                if (routeLocked) {
-                    map.off('click', handleMapClick);
-                    document.getElementById('status').textContent = 'Построение маршрута заблокировано';
-                } else {
-                    map.on('click', handleMapClick);
-                    document.getElementById('status').textContent = 'Готов к построению маршрута';
-                }
-            });
-            
-            // Обработчики для кнопки замка на Google карте
-            document.getElementById('lock-btn-google').addEventListener('click', () => {
-                routeLocked = !routeLocked;
-                const lockBtn = document.getElementById('lock-btn');
-                const lockBtnGoogle = document.getElementById('lock-btn-google');
-                
-                lockBtn.textContent = routeLocked ? '🔒' : '🔓';
-                lockBtnGoogle.textContent = routeLocked ? '🔒' : '🔓';
-                
-                if (routeLocked) {
-                    map.off('click', handleMapClick);
-                    document.getElementById('status').textContent = 'Построение маршрута заблокировано';
-                } else {
-                    map.on('click', handleMapClick);
-                    document.getElementById('status').textContent = 'Готов к построению маршрута';
-                }
-            });
-            
-            // Обработчики для кнопки КП 2025 на базовых картах
-            document.getElementById('kp-layer-btn').addEventListener('click', toggleKPLayer);
-            
-            // Обработчики для кнопки КП 2025 на Google карте
-            document.getElementById('kp-layer-btn-google').addEventListener('click', toggleKPLayer);
-            
-            document.getElementById('points-layer-btn').addEventListener('click', toggleUserPointsLayer);
-            document.getElementById('json-points-btn').addEventListener('click', toggleJsonPointsLayer);
-            
-            // Обработчики для управления пользовательскими метками
-            document.getElementById('add-point-btn').addEventListener('click', () => {
-                console.log('Кнопка добавления меток нажата');
+            setupButton('save-route', saveRoute);
+            setupButton('load-route', () => document.getElementById('route-file-input').click());
+            setupButton('save-bookmark', saveUserPointsToFile);
+            setupButton('load-bookmark', () => document.getElementById('bookmark-file-input').click());
+            setupButton('clear-route-btn', clearRoute);
+            setupButton('show-route-points-btn', toggleRoutePointsPopup);
+            setupButton('undo-btn', undoLastPoint);
+            setupButton('undo-btn-google', undoLastPoint);
+            setupButton('kp-layer-btn', toggleKPLayer);
+            setupButton('kp-layer-btn-google', toggleKPLayer);
+            setupButton('danger-layer-btn', toggleDangerLayer);
+            setupButton('danger-layer-btn-google', toggleDangerLayer);
+            setupButton('points-layer-btn', toggleUserPointsLayer);
+            setupButton('all-edges-btn', toggleAllEdgesLayer);
+            setupButton('add-point-btn', () => {
                 isUserPointsMode = true;
                 isEditMode = false;
                 document.getElementById('status').textContent = 'Режим добавления меток: кликните на карту для добавления метки';
             });
-            
-            document.getElementById('edit-points-btn').addEventListener('click', () => {
-                console.log('Кнопка редактирования меток нажата');
-                startEditMode();
-            });
-            
-            document.getElementById('cancel-edit-btn').addEventListener('click', () => {
-                console.log('Кнопка отмены редактирования нажата');
-                cancelEditMode();
-            });
-            
-            document.getElementById('delete-point-btn').addEventListener('click', function() {
-                console.log('Кнопка удаления нажата, выбранная метка:', selectedPointIndex);
-                deleteUserPoint();
-            });
-            
-            document.getElementById('add-point-cancel').addEventListener('click', () => {
+            setupButton('edit-points-btn', startEditMode);
+            setupButton('cancel-edit-btn', cancelEditMode);
+            setupButton('delete-point-btn', deleteUserPoint);
+            setupButton('add-point-cancel', () => {
                 hideAddPointPopup();
                 isUserPointsMode = false;
                 document.getElementById('status').textContent = 'Режим просмотра пользовательских меток. Используйте кнопки для управления.';
             });
+            setupButton('add-point-save', addUserPoint);
+            setupButton('edit-point-cancel', () => {
+                hideEditPointPopup();
+                if (selectedPointIndex !== null && userPointMarkers[selectedPointIndex]) {
+                    userPointMarkers[selectedPointIndex].getElement().classList.remove('selected');
+                }
+                selectedPointIndex = null;
+                document.getElementById('delete-point-btn').style.display = 'none';
+            });
+            setupButton('edit-point-delete', deleteUserPoint);
+            setupButton('edit-point-save', updateUserPoint);
+            setupButton('show-disclaimer', () => document.getElementById('disclaimer-overlay').style.display = 'flex');
+            setupButton('close-disclaimer', () => document.getElementById('disclaimer-overlay').style.display = 'none');
+            setupButton('search-points-btn', showSearchPointsPopup);
             
-            document.getElementById('add-point-save').addEventListener('click', addUserPoint);
+            const toggleLock = () => {
+                routeLocked = !routeLocked;
+                const lockBtn = document.getElementById('lock-btn');
+                const lockBtnGoogle = document.getElementById('lock-btn-google');
+                lockBtn.textContent = lockBtnGoogle.textContent = routeLocked ? '🔒' : '🔓';
+                
+                if (routeLocked) {
+                    map.off('click', handleMapClick);
+                    document.getElementById('status').textContent = 'Построение маршрута заблокировано';
+                } else {
+                    map.on('click', handleMapClick);
+                    document.getElementById('status').textContent = 'Готов к построению маршрута';
+                }
+            };
+            
+            document.getElementById('lock-btn').addEventListener('click', toggleLock);
+            document.getElementById('lock-btn-google').addEventListener('click', toggleLock);
             
             document.getElementById('add-point-overlay').addEventListener('click', (e) => {
                 if (e.target.id === 'add-point-overlay') {
@@ -3791,20 +3570,6 @@
                     document.getElementById('status').textContent = 'Режим просмотра пользовательских меток. Используйте кнопки для управления.';
                 }
             });
-            
-            // Обработчики для редактирования меток
-            document.getElementById('edit-point-cancel').addEventListener('click', () => {
-                hideEditPointPopup();
-                if (selectedPointIndex !== null && userPointMarkers[selectedPointIndex]) {
-                    userPointMarkers[selectedPointIndex].getElement().classList.remove('selected');
-                }
-                selectedPointIndex = null;
-                document.getElementById('delete-point-btn').style.display = 'none';
-            });
-            
-            document.getElementById('edit-point-delete').addEventListener('click', deleteUserPoint);
-            
-            document.getElementById('edit-point-save').addEventListener('click', updateUserPoint);
             
             document.getElementById('edit-point-overlay').addEventListener('click', (e) => {
                 if (e.target.id === 'edit-point-overlay') {
@@ -3817,46 +3582,25 @@
                 }
             });
             
-            map.on('click', handleMapClick);
-            
-            document.getElementById('show-disclaimer').addEventListener('click', () => {
-                document.getElementById('disclaimer-overlay').style.display = 'flex';
-            });
-            
-            document.getElementById('close-disclaimer').addEventListener('click', () => {
-                document.getElementById('disclaimer-overlay').style.display = 'none';
-            });
-            
             document.getElementById('disclaimer-overlay').addEventListener('click', (e) => {
                 if (e.target.id === 'disclaimer-overlay') {
                     document.getElementById('disclaimer-overlay').style.display = 'none';
                 }
             });
             
-            // Обработчики для поиска точек (Android стиль)
-            document.getElementById('search-points-btn').addEventListener('click', showSearchPointsPopup);
+            map.on('click', handleMapClick);
             
-            // Поиск по вводу в реальном времени
-            document.getElementById('search-input').addEventListener('input', (e) => {
-                performSearch(e.target.value);
+            document.getElementById('route-file-input').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) loadRouteFromFile(e.target.files[0]);
             });
             
-            // Поиск по нажатию Enter
-            document.getElementById('search-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch(e.target.value);
-                }
+            document.getElementById('bookmark-file-input').addEventListener('change', (e) => {
+                if (e.target.files.length > 0) loadUserPointsFromFile(e.target.files[0]);
             });
             
-            // Закрытие поиска по Escape
-            document.getElementById('search-input').addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    toggleSearchPanel();
-                }
-            });
-            
-            // Обработчик для кнопки поиска в правом верхнем углу (на Google карте)
-            document.getElementById('json-points-btn').addEventListener('click', toggleJsonPointsLayer);
+            document.getElementById('search-input').addEventListener('input', (e) => performSearch(e.target.value));
+            document.getElementById('search-input').addEventListener('keypress', (e) => e.key === 'Enter' && performSearch(e.target.value));
+            document.getElementById('search-input').addEventListener('keydown', (e) => e.key === 'Escape' && toggleSearchPanel());
         });
     </script>
 </body>
