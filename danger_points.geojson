@@ -1,0 +1,277 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252353.515791473,
+          7245889.079939615
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:32:40.371Z",
+        "updated": "2026-01-26T05:33:39.151Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252348.63961218,
+          7245876.956952338
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:32:53.998Z",
+        "updated": "2026-01-26T05:33:27.530Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252339.4746451955,
+          7245883.508940236
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:33:17.138Z",
+        "updated": "2026-01-26T05:33:17.138Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252339.136326713,
+          7245862.360100453
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:33:52.367Z",
+        "updated": "2026-01-26T05:33:52.367Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252359.692684269,
+          7245860.379782635
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:34:02.455Z",
+        "updated": "2026-01-26T05:34:02.455Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252872.958206928,
+          7246218.755410218
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:34:55.982Z",
+        "updated": "2026-01-26T05:34:55.982Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252764.104390725,
+          7246191.713459043
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:35:31.909Z",
+        "updated": "2026-01-26T05:35:31.909Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252736.442820998,
+          7246179.482431634
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:35:42.517Z",
+        "updated": "2026-01-26T05:35:42.517Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252744.324309453,
+          7246127.8947294345
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:35:54.211Z",
+        "updated": "2026-01-26T05:35:54.211Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252569.85450978,
+          7246032.506646668
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:36:17.366Z",
+        "updated": "2026-01-26T05:36:17.366Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252458.305349187,
+          7246049.609837143
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:36:45.851Z",
+        "updated": "2026-01-26T05:36:45.851Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252457.651064243,
+          7246000.614415067
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:37:10.945Z",
+        "updated": "2026-01-26T05:37:10.945Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252441.811578974,
+          7245998.746329988
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:37:20.028Z",
+        "updated": "2026-01-26T05:37:20.028Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252455.469300411,
+          7246104.776291844
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:37:47.285Z",
+        "updated": "2026-01-26T05:37:47.285Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252439.987579456,
+          7246099.527274802
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:37:55.637Z",
+        "updated": "2026-01-26T05:37:55.637Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252439.488169102,
+          7246086.654685389
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:38:01.509Z",
+        "updated": "2026-01-26T05:38:01.509Z"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4252425.124444246,
+          7246073.021423758
+        ]
+      },
+      "properties": {
+        "name": "Опасно",
+        "comment": "",
+        "created": "2026-01-26T05:38:09.077Z",
+        "updated": "2026-01-26T05:38:09.077Z"
+      }
+    }
+  ]
+}
