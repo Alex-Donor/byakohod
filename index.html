@@ -6,1310 +6,1379 @@
     <title>БякоХод — Маршрутизация</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root {
-            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-area-inset-top: env(safe-area-inset-top, 0px);
-            --safe-area-inset-left: env(safe-area-inset-left, 0px);
-            --safe-area-inset-right: env(safe-area-inset-right, 0px);
-        }
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Calibri, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            overflow: hidden;
-        }
-        #map {
-            width: 100%;
-            height: 100vh;
-            cursor: default;
-            touch-action: pan-x pan-y;
-        }
-        #menu-button {
-            position: absolute;
-            top: calc(10px + var(--safe-area-inset-top));
-            left: calc(10px + var(--safe-area-inset-left));
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            z-index: 1001;
-            box-shadow: 0 0 8px rgba(0,0,0,0.3);
-        }
-        #menu-button span {
-            display: block;
-            width: 4px;
-            height: 4px;
-            background: #333;
-            border-radius: 50%;
-            margin: 1px 0;
-        }
-        #left-controls {
-            position: absolute;
-            top: calc(12px + var(--safe-area-inset-top));
-            left: calc(60px + var(--safe-area-inset-left));
-            display: flex;
-            gap: 4px;
-            z-index: 1000;
-            align-items: center;
-        }
-        .control-btn {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0,0,0,0.3);
-            font-size: 20px;
-            color: #333;
-            padding: 0;
-            margin: 0;
-            font-weight: bold;
-            line-height: 1;
-        }
-        #search-points-btn {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0,0,0,0.3);
-            font-size: 20px;
-            color: #333;
-            padding: 0;
-            margin: 0;
-            font-weight: bold;
-            line-height: 1;
-        }
-        #zoom-level-display {
-            width: 30px;
-            height: 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 14px;
-            color: #007bff;
-            text-shadow:
-                -1px -1px 0 white,
-                1px -1px 0 white,
-                -1px 1px 0 white,
-                1px 1px 0 white;
-            pointer-events: none;
-        }
-        #dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 55px;
-            left: 10px;
-            background: #e8e8e8;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 0 12px rgba(0,0,0,0.5);
-            z-index: 1000;
-            width: fit-content;
-            font-size: 13px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        #dropdown-menu.active {
-            display: block;
-        }
-        .menu-section {
-            margin-bottom: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .menu-label {
-            display: block;
-            font-weight: bold;
-            color: #222;
-            margin-bottom: 6px;
-        }
-        .menu-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            background: #dcdcdc;
-            border: 1px solid #aaa;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 10px 12px;
-            white-space: nowrap;
-            width: 100%;
-        }
-        .menu-btn:hover {
-            background: #ccc;
-        }
-        #status {
-            position: absolute;
-            bottom: calc(12px + var(--safe-area-inset-bottom));
-            left: calc(12px + var(--safe-area-inset-left));
-            background: #e8e8e8;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #222;
-            z-index: 1000;
-            max-width: calc(300px - var(--safe-area-inset-left));
-            line-height: 1.4;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-        }
-        .route-distance {
-            color: red;
-            font-weight: bold;
-        }
-        #clear-route-btn {
-            position: absolute;
-            bottom: calc(70px + var(--safe-area-inset-bottom));
-            left: calc(12px + var(--safe-area-inset-left));
-            padding: 8px 12px;
-            font-size: 14px;
-            background: #dcdcdc;
-            border: 1px solid #aaa;
-            border-radius: 4px;
-            cursor: pointer;
-            z-index: 1000;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-            font-weight: bold;
-            display: none;
-        }
-        .map-controls {
-            position: absolute;
-            top: calc(12px + var(--safe-area-inset-top));
-            z-index: 1003;
-            align-items: center;
-        }
-        .right-controls {
-            right: calc(12px + var(--safe-area-inset-right));
-            display: flex;
-            gap: 8px;
-        }
-        .left-controls {
-            left: calc(60px + var(--safe-area-inset-left));
-            display: flex;
-            gap: 8px;
-        }
-        .map-controls button {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0,0,0,0.3);
-            font-size: 20px;
-            color: #333;
-            padding: 0;
-            margin: 0;
-            font-weight: bold;
-            line-height: 1;
-        }
-        #kp-layer-btn, #kp-layer-btn-google, #danger-layer-btn, #danger-layer-btn-google {
-            font-size: 13px !important;
-            font-weight: bold !important;
-        }
-        #all-edges-btn {
-            font-size: 16px !important;
-        }
-        .layer-active {
-            background-color: #4CAF50 !important;
-            border-color: #388E3C !important;
-            color: white !important;
-        }
-        #loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-        #loading-modal {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-        }
-        .custom-dialog-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-        }
-        .custom-dialog {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-            font-family: Calibri, Arial, sans-serif;
-            max-width: 90%;
-            width: 400px;
-            z-index: 10001;
-        }
-        .custom-dialog-title {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 15px;
-            text-align: center;
-            color: #222;
-        }
-        .custom-dialog-message {
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .custom-dialog-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        .custom-dialog-button {
-            padding: 8px 20px;
-            font-size: 14px;
-            border: 1px solid #aaa;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            min-width: 80px;
-        }
-        .custom-dialog-button-ok {
-            background: #dcdcdc;
-        }
-        /* Стили для позиционирования тултипов ниже указателя */
-        .leaflet-popup-tip {
-            display: none !important;
-        }
-        .leaflet-popup-content-wrapper {
-            margin-top: 15px !important;
-        }
-        .leaflet-popup {
-            bottom: 0 !important;
-            margin-bottom: 15px !important;
-        }
-        .route-io-section {
-            border: 2px solid #007BFF;
-            border-radius: 6px;
-            padding: 10px;
-            background-color: #f0f8ff;
-            margin-bottom: 12px;
-        }
-        .route-save-row,
-        .route-load-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 6px;
-        }
-        .menu-label.inline {
-            margin: 0;
-            font-weight: bold;
-            font-size: 12px;
-            white-space: nowrap;
-        }
-        #route-name,
-        #bookmark-name {
-            flex: 1;
-            min-width: 60px;
-            padding: 8px 10px;
-            font-size: 12px;
-            border: 2px solid #007BFF;
-            border-radius: 8px;
-            box-sizing: border-box;
-            background-color: #fff;
-        }
-        .menu-btn.icon-only {
-            width: 28px;
-            height: 28px;
-            padding: 0;
-            display: flex;
-            justify-content: center; 
-            align-items: center;     
-            font-size: 14px;
-            background: #dcdcdc;
-            border: 1px solid #aaa;
-            border-radius: 4px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        #route-points-popup {
-            position: fixed;
-            bottom: calc(140px + var(--safe-area-inset-bottom));
-            right: calc(12px + var(--safe-area-inset-right));
-            background: white;
-            padding: 12px;
-            border: 2px solid #aaffaa;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            max-height: 30vh;
-            overflow-y: auto;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 13px;
-            z-index: 2000;
-            max-width: 130px;
-            display: none;
-        }
-        .route-point-item {
-            cursor: pointer;
-            padding: 6px 8px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-            margin: 3px 0;
-            background-color: #e6f7ff;
-            border-left: 3px solid #b3e0ff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .route-point-item:hover {
-            background-color: #d0ebff;
-        }
-        .direction-indicator {
-            font-size: 16px;
-            margin-left: 8px;
-            width: 20px;
-            text-align: center;
-        }
-        #show-route-points-btn {
-            position: absolute;
-            bottom: calc(100px + var(--safe-area-inset-bottom));
-            right: calc(12px + var(--safe-area-inset-right));
-            padding: 8px 12px;
-            background: #dcdcdc;
-            border: 1px solid #aaa;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
-        }
-        #add-point-popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.8);
-            z-index: 10000;
-            width: 300px;
-            max-width: 90%;
-            font-family: Calibri, Arial, sans-serif;
-            border: 3px solid #8B008B;
-        }
-        #add-point-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 9999;
-        }
-        #add-point-popup h3 {
-            margin: 0 0 15px;
-            text-align: center;
-            font-size: 18px;
-            color: #8B008B;
-            font-weight: bold;
-        }
-        #add-point-popup label {
-            display: block;
-            margin-top: 12px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
-        }
-        #add-point-popup input,
-        #add-point-popup textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        #add-point-popup-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        #add-point-popup-buttons button {
-            flex: 1;
-            padding: 10px;
-            font-weight: bold;
-            border: 2px solid #aaa;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 14px;
-        }
-        .menu-copyright {
-            text-align: center;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #aaa;
-            width: 100%;
-        }
-        .menu-copyright a {
-            text-decoration: none;
-            color: #0066cc;
-            font-weight: bold;
-            font-size: 12px;
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 3px;
-            transition: all 0.2s;
-            text-shadow: 
-                0 0 2px white,
-                0 0 4px white;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-        }
-        .menu-copyright a:hover {
-            background-color: #dcdcdc;
-            color: #004499;
-            text-decoration: underline;
-        }
-        .kp-label-tech, .kp-label-point, .point-label-from-json, .user-point-label, .route-point-label, .danger-point-label {
-            font-family: Calibri, Arial, sans-serif !important;
-            font-weight: bold !important;
-            background: transparent !important;
-            border: none !important;
-            white-space: nowrap !important;
-        }
-        .kp-label-tech {
-            font-size: 10px !important;
-            color: #ff0000 !important;
-            text-shadow:
-                -1px -1px 0 white,
-                1px -1px 0 white,
-                -1px 1px 0 white,
-                1px 1px 0 white !important;
-        }
-        .kp-label-point {
-            font-size: 10px !important;
-            color: #004524 !important;
-            text-shadow:
-                -1px -1px 0 white,
-                1px -1px 0 white,
-                -1px 1px 0 white,
-                1px 1px 0 white !important;
-        }
-        .point-label-from-json {
-            font-size: 10px !important;
-            color: #5D4037 !important;
-            text-shadow:
-                -1px -1px 0 white,
-                1px -1px 0 white,
-                -1px 1px 0 white,
-                1px 1px 0 white !important;
-        }
-        .user-point-label {
-            font-size: 12px !important;
-            color: #8B008B !important;
-            text-shadow:
-                -1px -1px 0 white,
-                1px -1px 0 white,
-                -1px 1px 0 white,
-                2px 2px 0 white !important;
-        }
-        .danger-point-label {
-            font-size: 10px !important;
-            color: #d32f2f !important;
-            text-shadow:
-                -1px -1px 0 white,
-                1px -1px 0 white,
-                -1px 1px 0 white,
-                1px 1px 0 white !important;
-        }
-        .route-point-label-old {
-            font-family: Calibri, Arial, sans-serif !important;
-            font-size: 11px !important;
-            font-weight: bold !important;
-            color: #01579b !important;
-            background: #e3f2fd !important;
-            border: 1px solid #90caf9 !important;
-            border-radius: 3px !important;
-            padding: 1px 3px !important;
-            white-space: nowrap !important;
-            z-index: 100 !important;
-            text-shadow:
-                -1px -1px 0 white,
-                1px -1px 0 white,
-                -1px 1px 0 white,
-                1px 1px 0 white !important;
-        }
-        .route-point-marker {
-            stroke: white !important;
-            stroke-width: 2px !important;
-        }
-        .label-hidden {
-            display: none !important;
-        }
-        #points-controls-container {
-            position: absolute;
-            top: calc(60px + var(--safe-area-inset-top));
-            right: calc(12px + var(--safe-area-inset-right));
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 8px;
-            z-index: 1002;
-        }
-        #points-controls-main {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #points-controls-expanded {
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 8px;
-            margin-right: 8px;
-            transition: all 0.3s ease;
-            align-items: flex-end;
-        }
-        #points-controls-expanded.active {
-            display: flex;
-            animation: slideInDown 0.3s ease;
-        }
-        @keyframes slideInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .points-control-btn {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0,0,0,0.3);
-            font-size: 20px;
-            color: #333;
-            padding: 0;
-            margin: 0;
-            font-weight: bold;
-            line-height: 1;
-            transition: all 0.2s;
-        }
-        #points-layer-btn.active {
-            background-color: #8B008B !important;
-            border-color: #6A006A !important;
-            color: white !important;
-        }
-        #add-point-btn {
-            background-color: white !important;
-            border-color: #ccc !important;
-            color: #333 !important;
-            display: none;
-        }
-        /* НОВЫЙ СТИЛЬ ДЛЯ КНОПКИ ДОБАВЛЕНИЯ МЕТКИ В АКТИВНОМ РЕЖИМЕ */
-        #add-point-btn.active {
-            background-color: #4CAF50 !important;
-            border-color: #388E3C !important;
-            color: white !important;
-        }
-        /* СТИЛЬ ДЛЯ КНОПКИ РЕДАКТИРОВАНИЯ В АКТИВНОМ РЕЖИМЕ */
-        #edit-points-btn.active {
-            background-color: #4CAF50 !important;
-            border-color: #388E3C !important;
-            color: white !important;
-        }
-        #edit-points-btn {
-            background-color: white !important;
-            border-color: #ccc !important;
-            color: #333 !important;
-            display: none;
-        }
-        #delete-point-btn {
-            background-color: white !important;
-            border-color: #ccc !important;
-            color: #333 !important;
-            display: none;
-        }
-        #delete-all-points-btn {
-            background-color: white !important;
-            border-color: #ccc !important;
-            color: #333 !important;
-            display: none;
-        }
-        .user-point-marker.editing {
-            animation: pulse 1.5s infinite;
-            cursor: pointer;
-        }
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
-            }
-        }
-        .user-point-marker.selected {
-            animation: selected-pulse 1s infinite;
-            box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7) !important;
-        }
-        @keyframes selected-pulse {
-            0% {
-                box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 15px rgba(255, 152, 0, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7);
-            }
-        }
-        #edit-point-popup .custom-dialog {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border: 3px solid #ff9800;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            width: 320px;
-            max-width: 90vw;
-        }
-        #edit-point-popup .custom-dialog-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-        #edit-point-popup .custom-dialog-message {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        #edit-point-popup label {
-            display: block;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        #edit-point-popup input,
-        #edit-point-popup textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 14px;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-        }
-        #edit-point-popup input:focus,
-        #edit-point-popup textarea:focus {
-            outline: none;
-            border-color: #ff9800;
-            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
-        }
-        #edit-point-popup input {
-            height: 40px;
-        }
-        #edit-point-popup textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
-        #edit-point-popup .custom-dialog-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-        #edit-point-popup .custom-dialog-button {
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        #edit-point-cancel {
-            background: #e0e0e0;
-            color: #333;
-        }
-        #edit-point-delete {
-            background: #f44336;
-            color: white;
-        }
-        #edit-point-save {
-            background: #4CAF50;
-            color: white;
-        }
-        #search-panel {
-            position: absolute;
-            top: calc(58px + var(--safe-area-inset-top));
-            left: calc(60px + var(--safe-area-inset-left));
-            width: 220px;
-            display: none;
-            z-index: 1003;
-            transition: all 0.3s ease;
-        }
-        #search-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 2px solid #aaa;
-            border-radius: 4px;
-            font-size: 14px;
-            font-family: Calibri, Arial, sans-serif;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        #search-input:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
-        }
-        #search-results-panel {
-            max-height: 200px;
-            overflow-y: auto;
-            background: white;
-            border: 2px solid #aaa;
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            display: none;
-        }
-        .search-result-item-panel {
-            padding: 6px 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-family: Calibri, Arial, sans-serif;
-            border-bottom: 1px solid #eee;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .search-result-item-panel:hover {
-            background-color: #f0f8ff;
-        }
-        .search-highlight-marker {
-            z-index: 10000 !important;
-        }
-        .search-highlight-marker .leaflet-marker-icon {
-            filter: drop-shadow(0 0 8px rgba(0, 102, 204, 0.8));
-        }
-        .search-halo {
-            animation: halo-pulse 2s infinite;
-            z-index: 500 !important;
-        }
-        @keyframes halo-pulse {
-            0% {
-                opacity: 0.7;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.9;
-                transform: scale(1.1);
-            }
-            100% {
-                opacity: 0.7;
-                transform: scale(1);
-            }
-        }
-        /* Стили для плавного перемещения карты */
-        .smooth-pan {
-            transition: transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-        }
-        /* Стили для синих цифр в окне нитка маршрута */
-        .route-point-item strong {
-            color: #0066cc !important;
-            font-weight: bold !important;
-        }
-        /* Стили для легенды */
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin: 4px 0;
-            font-size: 12px;
-        }
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            border-radius: 2px;
-            border: 1px solid #aaa;
-        }
-        .tunnel-legend {
-            margin-top: 8px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            font-size: 12px;
-        }
-        .tunnel-legend-title {
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: #333;
-            text-align: center;
-        }
-        /* Скрытие аттрибуции Leaflet */
-        .leaflet-control-attribution {
-            display: none !important;
-        }
-        
-        /* ИЗМЕНЕНИЯ ДЛЯ КНОПОК УПРАВЛЕНИЯ МАРШРУТОМ - ПЕРЕМЕЩЕНЫ ВПРАВО */
-        
-        /* Базовые элементы управления (для карт byaki.png и map2.png) */
-        #basic-map-controls {
-            position: absolute;
-            top: calc(12px + var(--safe-area-inset-top));
-            right: calc(12px + var(--safe-area-inset-right));
-            display: none;
-            flex-direction: row;
-            gap: 8px;
-            z-index: 1003;
-            align-items: center;
-        }
+		:root {
+			--safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+			--safe-area-inset-top: env(safe-area-inset-top, 0px);
+			--safe-area-inset-left: env(safe-area-inset-left, 0px);
+			--safe-area-inset-right: env(safe-area-inset-right, 0px);
+		}
+		body {
+			margin: 0;
+			padding: 0;
+			font-family: Calibri, Arial, sans-serif;
+			-webkit-tap-highlight-color: transparent;
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			user-select: none;
+			overflow: hidden;
+		}
+		#map {
+			width: 100%;
+			height: 100vh;
+			cursor: default;
+			touch-action: pan-x pan-y;
+		}
+		#menu-button {
+			position: absolute;
+			top: calc(10px + var(--safe-area-inset-top));
+			left: calc(10px + var(--safe-area-inset-left));
+			width: 40px;
+			height: 40px;
+			background: white;
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			z-index: 1001;
+			box-shadow: 0 0 8px rgba(0,0,0,0.3);
+		}
+		#menu-button span {
+			display: block;
+			width: 4px;
+			height: 4px;
+			background: #333;
+			border-radius: 50%;
+			margin: 1px 0;
+		}
+		#left-controls {
+			position: absolute;
+			top: calc(12px + var(--safe-area-inset-top));
+			left: calc(60px + var(--safe-area-inset-left));
+			display: flex;
+			gap: 4px;
+			z-index: 1000;
+			align-items: center;
+		}
+		.control-btn {
+			width: 40px;
+			height: 40px;
+			background: white;
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			box-shadow: 0 0 8px rgba(0,0,0,0.3);
+			font-size: 20px;
+			color: #333;
+			padding: 0;
+			margin: 0;
+			font-weight: bold;
+			line-height: 1;
+		}
+		#search-points-btn {
+			width: 40px;
+			height: 40px;
+			background: white;
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			box-shadow: 0 0 8px rgba(0,0,0,0.3);
+			font-size: 20px;
+			color: #333;
+			padding: 0;
+			margin: 0;
+			font-weight: bold;
+			line-height: 1;
+		}
+		#zoom-level-display {
+			width: 30px;
+			height: 30px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-weight: bold;
+			font-size: 14px;
+			color: #007bff;
+			text-shadow:
+				-1px -1px 0 white,
+				1px -1px 0 white,
+				-1px 1px 0 white,
+				1px 1px 0 white;
+			pointer-events: none;
+		}
+		#dropdown-menu {
+			display: none;
+			position: absolute;
+			top: 55px;
+			left: 10px;
+			background: #e8e8e8;
+			padding: 8px;
+			border-radius: 6px;
+			box-shadow: 0 0 10px rgba(0,0,0,0.4);
+			z-index: 2000;
+			width: fit-content;
+			font-size: 12px;
+			max-height: 75vh;
+			overflow-y: auto;
+		}
+		#dropdown-menu.active {
+			display: block;
+		}
+		.menu-section {
+			margin-bottom: 8px;
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+		.menu-label {
+			display: block;
+			font-weight: bold;
+			color: #222;
+			margin-bottom: 4px;
+			font-size: 14px;
+		}
+		.menu-btn {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			font-weight: bold;
+			font-size: 12px;
+			background: #dcdcdc;
+			border: 1px solid #aaa;
+			border-radius: 3px;
+			cursor: pointer;
+			padding: 8px 10px;
+			white-space: nowrap;
+			width: 100%;
+		}
+		.menu-btn:hover {
+			background: #ccc;
+		}
+		#status {
+			position: absolute;
+			bottom: calc(12px + var(--safe-area-inset-bottom));
+			left: calc(12px + var(--safe-area-inset-left));
+			background: #e8e8e8;
+			padding: 8px 12px;
+			border-radius: 4px;
+			font-size: 14px;
+			color: #222;
+			z-index: 1000;
+			max-width: calc(300px - var(--safe-area-inset-left));
+			line-height: 1.4;
+			box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+		}
+		.route-distance {
+			color: red;
+			font-weight: bold;
+		}
+		#clear-route-btn {
+			position: absolute;
+			bottom: calc(70px + var(--safe-area-inset-bottom));
+			left: calc(12px + var(--safe-area-inset-left));
+			padding: 8px 12px;
+			font-size: 14px;
+			background: #dcdcdc;
+			border: 1px solid #aaa;
+			border-radius: 4px;
+			cursor: pointer;
+			z-index: 1000;
+			box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+			font-weight: bold;
+			display: none;
+		}
+		.map-controls {
+			position: absolute;
+			top: calc(12px + var(--safe-area-inset-top));
+			z-index: 1003;
+			align-items: center;
+		}
+		.right-controls {
+			right: calc(12px + var(--safe-area-inset-right));
+			display: flex;
+			gap: 8px;
+		}
+		.left-controls {
+			left: calc(60px + var(--safe-area-inset-left));
+			display: flex;
+			gap: 8px;
+		}
+		.map-controls button {
+			width: 40px;
+			height: 40px;
+			background: white;
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			box-shadow: 0 0 8px rgba(0,0,0,0.3);
+			font-size: 20px;
+			color: #333;
+			padding: 0;
+			margin: 0;
+			font-weight: bold;
+			line-height: 1;
+		}
+		#kp-layer-btn, #kp-layer-btn-google, #danger-layer-btn, #danger-layer-btn-google {
+			font-size: 13px !important;
+			font-weight: bold !important;
+		}
+		#all-edges-btn {
+			font-size: 16px !important;
+		}
+		.layer-active {
+			background-color: #4CAF50 !important;
+			border-color: #388E3C !important;
+			color: white !important;
+		}
+		#loading-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.5);
+			z-index: 2000;
+			justify-content: center;
+			align-items: center;
+		}
+		#loading-modal {
+			background: white;
+			padding: 20px 30px;
+			border-radius: 10px;
+			font-size: 18px;
+			font-weight: bold;
+			text-align: center;
+			box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+		}
+		.custom-dialog-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0,0,0,0.7);
+			z-index: 10000;
+			justify-content: center;
+			align-items: center;
+		}
+		.custom-dialog {
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+			font-family: Calibri, Arial, sans-serif;
+			max-width: 90%;
+			width: 400px;
+			z-index: 10001;
+		}
+		.custom-dialog-title {
+			font-weight: bold;
+			font-size: 16px;
+			margin-bottom: 15px;
+			text-align: center;
+			color: #222;
+		}
+		.custom-dialog-message {
+			font-size: 14px;
+			line-height: 1.5;
+			margin-bottom: 20px;
+			text-align: center;
+		}
+		.custom-dialog-buttons {
+			display: flex;
+			gap: 10px;
+			justify-content: center;
+		}
+		.custom-dialog-button {
+			padding: 8px 20px;
+			font-size: 14px;
+			border: 1px solid #aaa;
+			border-radius: 5px;
+			cursor: pointer;
+			font-weight: bold;
+			min-width: 80px;
+		}
+		.custom-dialog-button-ok {
+			background: #dcdcdc;
+		}
+		.leaflet-popup-tip {
+			display: none !important;
+		}
+		.leaflet-popup-content-wrapper {
+			margin-top: 15px !important;
+		}
+		.leaflet-popup {
+			bottom: 0 !important;
+			margin-bottom: 15px !important;
+		}
+		.route-io-section {
+			border: 2px solid #007BFF;
+			border-radius: 4px;
+			padding: 8px;
+			background-color: #f0f8ff;
+			margin-bottom: 8px;
+			font-size: 13px
+		}
+		.route-save-row,
+		.route-load-row {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			margin-bottom: 4px;
+		}
+		.menu-label.inline {
+			margin: 0;
+			font-weight: bold;
+			font-size: 11px;
+			white-space: nowrap;
+			min-width: 60px;
+		}
+		#route-name,
+		#bookmark-name {
+			flex: 1;
+			min-width: 60px;
+			padding: 6px 8px;
+			font-size: 11px;
+			border: 2px solid #007BFF;
+			border-radius: 6px;
+			box-sizing: border-box;
+			background-color: #fff;
+			height: 28px;
+		}
+		.menu-btn.icon-only {
+			width: 26px;
+			height: 26px;
+			padding: 0;
+			display: flex;
+			justify-content: center; 
+			align-items: center;     
+			font-size: 12px;
+			background: #dcdcdc;
+			border: 1px solid #aaa;
+			border-radius: 3px;
+			cursor: pointer;
+			flex-shrink: 0;
+		}
+		#route-points-popup {
+			position: fixed;
+			bottom: calc(140px + var(--safe-area-inset-bottom));
+			right: calc(12px + var(--safe-area-inset-right));
+			background: white;
+			padding: 12px;
+			border: 2px solid #aaffaa;
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+			max-height: 30vh;
+			overflow-y: auto;
+			font-family: Calibri, Arial, sans-serif;
+			font-size: 13px;
+			z-index: 2000;
+			max-width: 130px;
+			display: none;
+		}
+		.route-point-item {
+			cursor: pointer;
+			padding: 6px 8px;
+			border-radius: 4px;
+			transition: background-color 0.2s;
+			margin: 3px 0;
+			background-color: #e6f7ff;
+			border-left: 3px solid #b3e0ff;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+		.route-point-item:hover {
+			background-color: #d0ebff;
+		}
+		.direction-indicator {
+			font-size: 16px;
+			margin-left: 8px;
+			width: 20px;
+			text-align: center;
+		}
+		#show-route-points-btn {
+			position: absolute;
+			bottom: calc(100px + var(--safe-area-inset-bottom));
+			right: calc(12px + var(--safe-area-inset-right));
+			padding: 8px 12px;
+			background: #dcdcdc;
+			border: 1px solid #aaa;
+			border-radius: 4px;
+			font-size: 14px;
+			cursor: pointer;
+			z-index: 1000;
+			display: none;
+			box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+		}
+		#add-point-popup {
+			display: none;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			background: white;
+			padding: 20px;
+			border-radius: 10px;
+			box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+			z-index: 10000;
+			width: 300px;
+			max-width: 90%;
+			font-family: Calibri, Arial, sans-serif;
+			border: 3px solid #8B008B;
+		}
+		#add-point-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0,0,0,0.7);
+			z-index: 9999;
+		}
+		#add-point-popup h3 {
+			margin: 0 0 15px;
+			text-align: center;
+			font-size: 18px;
+			color: #8B008B;
+			font-weight: bold;
+		}
+		#add-point-popup label {
+			display: block;
+			margin-top: 12px;
+			font-size: 14px;
+			font-weight: bold;
+			color: #333;
+		}
+		#add-point-popup input,
+		#add-point-popup textarea {
+			width: 100%;
+			padding: 10px;
+			margin-top: 5px;
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			font-family: Calibri, Arial, sans-serif;
+			font-size: 14px;
+			box-sizing: border-box;
+		}
+		#add-point-popup-buttons {
+			display: flex;
+			gap: 10px;
+			margin-top: 20px;
+		}
+		#add-point-popup-buttons button {
+			flex: 1;
+			padding: 10px;
+			font-weight: bold;
+			border: 2px solid #aaa;
+			border-radius: 6px;
+			cursor: pointer;
+			font-family: Calibri, Arial, sans-serif;
+			font-size: 14px;
+		}
+		.menu-copyright {
+			text-align: center;
+			margin-top: 8px;
+			padding-top: 8px;
+			border-top: 1px solid #aaa;
+			width: 100%;
+		}
+		.menu-copyright a {
+			text-decoration: none;
+			color: #0066cc;
+			font-weight: bold;
+			font-size: 11px;
+			display: inline-block;
+			padding: 3px 6px;
+			border-radius: 2px;
+			transition: all 0.2s;
+			text-shadow: 
+				0 0 1px white,
+				0 0 2px white;
+			font-weight: 900;
+			letter-spacing: 0.3px;
+		}
+		.menu-copyright a:hover {
+			background-color: #dcdcdc;
+			color: #004499;
+			text-decoration: underline;
+		}
+		.kp-label-tech, .kp-label-point, .point-label-from-json, .user-point-label, .route-point-label, .danger-point-label {
+			font-family: Calibri, Arial, sans-serif !important;
+			font-weight: bold !important;
+			background: transparent !important;
+			border: none !important;
+			white-space: nowrap !important;
+		}
+		.kp-label-tech {
+			font-size: 10px !important;
+			color: #ff0000 !important;
+			text-shadow:
+				-1px -1px 0 white,
+				1px -1px 0 white,
+				-1px 1px 0 white,
+				1px 1px 0 white !important;
+		}
+		.kp-label-point {
+			font-size: 10px !important;
+			color: #004524 !important;
+			text-shadow:
+				-1px -1px 0 white,
+				1px -1px 0 white,
+				-1px 1px 0 white,
+				1px 1px 0 white !important;
+		}
+		.point-label-from-json {
+			font-size: 10px !important;
+			color: #5D4037 !important;
+			text-shadow:
+				-1px -1px 0 white,
+				1px -1px 0 white,
+				-1px 1px 0 white,
+				1px 1px 0 white !important;
+		}
+		.user-point-label {
+			font-size: 12px !important;
+			color: #8B008B !important;
+			text-shadow:
+				-1px -1px 0 white,
+				1px -1px 0 white,
+				-1px 1px 0 white,
+				2px 2px 0 white !important;
+		}
+		.danger-point-label {
+			font-size: 10px !important;
+			color: #d32f2f !important;
+			text-shadow:
+				-1px -1px 0 white,
+				1px -1px 0 white,
+				-1px 1px 0 white,
+				1px 1px 0 white !important;
+		}
+		.route-point-label-old {
+			font-family: Calibri, Arial, sans-serif !important;
+			font-size: 11px !important;
+			font-weight: bold !important;
+			color: #01579b !important;
+			background: #e3f2fd !important;
+			border: 1px solid #90caf9 !important;
+			border-radius: 3px !important;
+			padding: 1px 3px !important;
+			white-space: nowrap !important;
+			z-index: 100 !important;
+			text-shadow:
+				-1px -1px 0 white,
+				1px -1px 0 white,
+				-1px 1px 0 white,
+				1px 1px 0 white !important;
+		}
+		.route-point-marker {
+			stroke: white !important;
+			stroke-width: 2px !important;
+		}
+		.label-hidden {
+			display: none !important;
+		}
+		#points-controls-container {
+			position: absolute;
+			top: calc(60px + var(--safe-area-inset-top));
+			right: calc(12px + var(--safe-area-inset-right));
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 8px;
+			z-index: 1002;
+		}
+		#points-controls-main {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		#points-controls-expanded {
+			display: none;
+			flex-direction: column;
+			gap: 8px;
+			margin-top: 8px;
+			margin-right: 8px;
+			transition: all 0.3s ease;
+			align-items: flex-end;
+		}
+		#points-controls-expanded.active {
+			display: flex;
+			animation: slideInDown 0.3s ease;
+		}
+		@keyframes slideInDown {
+			from {
+				opacity: 0;
+				transform: translateY(-20px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+		.points-control-btn {
+			width: 40px;
+			height: 40px;
+			background: white;
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			box-shadow: 0 0 8px rgba(0,0,0,0.3);
+			font-size: 20px;
+			color: #333;
+			padding: 0;
+			margin: 0;
+			font-weight: bold;
+			line-height: 1;
+			transition: all 0.2s;
+		}
+		#points-layer-btn.active {
+			background-color: #8B008B !important;
+			border-color: #6A006A !important;
+			color: white !important;
+		}
+		#add-point-btn {
+			background-color: white !important;
+			border-color: #ccc !important;
+			color: #333 !important;
+			display: none;
+		}
+		#add-point-btn.active {
+			background-color: #4CAF50 !important;
+			border-color: #388E3C !important;
+			color: white !important;
+		}
+		#edit-points-btn.active {
+			background-color: #4CAF50 !important;
+			border-color: #388E3C !important;
+			color: white !important;
+		}
+		#edit-points-btn {
+			background-color: white !important;
+			border-color: #ccc !important;
+			color: #333 !important;
+			display: none;
+		}
+		#delete-point-btn {
+			background-color: white !important;
+			border-color: #ccc !important;
+			color: #333 !important;
+			display: none;
+		}
+		#delete-all-points-btn {
+			background-color: white !important;
+			border-color: #ccc !important;
+			color: #333 !important;
+			display: none;
+		}
+		.user-point-marker.editing {
+			animation: pulse 1.5s infinite;
+			cursor: pointer;
+		}
+		@keyframes pulse {
+			0% {
+				box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+			}
+			70% {
+				box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+			}
+			100% {
+				box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+			}
+		}
+		.user-point-marker.selected {
+			animation: selected-pulse 1s infinite;
+			box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7) !important;
+		}
+		@keyframes selected-pulse {
+			0% {
+				box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7);
+			}
+			70% {
+				box-shadow: 0 0 0 15px rgba(255, 152, 0, 0);
+			}
+			100% {
+				box-shadow: 0 0 0 5px rgba(255, 152, 0, 0.7);
+			}
+		}
+		#edit-point-popup .custom-dialog {
+			background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+			border: 3px solid #ff9800;
+			border-radius: 12px;
+			padding: 25px;
+			box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+			width: 320px;
+			max-width: 90vw;
+		}
+		#edit-point-popup .custom-dialog-title {
+			font-size: 18px;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 20px;
+			text-align: center;
+			padding-bottom: 10px;
+			border-bottom: 2px solid #eee;
+		}
+		#edit-point-popup .custom-dialog-message {
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+		}
+		#edit-point-popup label {
+			display: block;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 5px;
+			font-size: 14px;
+		}
+		#edit-point-popup input,
+		#edit-point-popup textarea {
+			width: 100%;
+			padding: 10px;
+			border: 2px solid #ddd;
+			border-radius: 6px;
+			font-family: Calibri, Arial, sans-serif;
+			font-size: 14px;
+			box-sizing: border-box;
+			transition: border-color 0.3s;
+		}
+		#edit-point-popup input:focus,
+		#edit-point-popup textarea:focus {
+			outline: none;
+			border-color: #ff9800;
+			box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.2);
+		}
+		#edit-point-popup input {
+			height: 40px;
+		}
+		#edit-point-popup textarea {
+			min-height: 80px;
+			resize: vertical;
+		}
+		#edit-point-popup .custom-dialog-buttons {
+			display: flex;
+			gap: 10px;
+			justify-content: space-between;
+			margin-top: 20px;
+		}
+		#edit-point-popup .custom-dialog-button {
+			padding: 10px 20px;
+			font-size: 14px;
+			font-weight: bold;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			transition: all 0.3s;
+			flex: 1;
+			min-width: 80px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+		}
+		#edit-point-cancel {
+			background: #e0e0e0;
+			color: #333;
+		}
+		#edit-point-delete {
+			background: #f44336;
+			color: white;
+		}
+		#edit-point-save {
+			background: #4CAF50;
+			color: white;
+		}
+		#search-panel {
+			position: absolute;
+			top: calc(58px + var(--safe-area-inset-top));
+			left: calc(60px + var(--safe-area-inset-left));
+			width: 220px;
+			display: none;
+			z-index: 1003;
+			transition: all 0.3s ease;
+		}
+		#search-input {
+			width: 100%;
+			padding: 8px 12px;
+			border: 2px solid #aaa;
+			border-radius: 4px;
+			font-size: 14px;
+			font-family: Calibri, Arial, sans-serif;
+			box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+		}
+		#search-input:focus {
+			outline: none;
+			border-color: #007bff;
+			box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+		}
+		#search-results-panel {
+			max-height: 200px;
+			overflow-y: auto;
+			background: white;
+			border: 2px solid #aaa;
+			border-top: none;
+			border-radius: 0 0 6px 6px;
+			box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+			display: none;
+		}
+		.search-result-item-panel {
+			padding: 6px 12px;
+			cursor: pointer;
+			font-size: 14px;
+			font-family: Calibri, Arial, sans-serif;
+			border-bottom: 1px solid #eee;
+			-webkit-tap-highlight-color: transparent;
+		}
+		.search-result-item-panel:hover {
+			background-color: #f0f8ff;
+		}
+		.search-highlight-marker {
+			z-index: 10000 !important;
+		}
+		.search-highlight-marker .leaflet-marker-icon {
+			filter: drop-shadow(0 0 8px rgba(0, 102, 204, 0.8));
+		}
+		.search-halo {
+			animation: halo-pulse 2s infinite;
+			z-index: 500 !important;
+		}
+		@keyframes halo-pulse {
+			0% {
+				opacity: 0.7;
+				transform: scale(1);
+			}
+			50% {
+				opacity: 0.9;
+				transform: scale(1.1);
+			}
+			100% {
+				opacity: 0.7;
+				transform: scale(1);
+			}
+		}
+		.smooth-pan {
+			transition: transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+		}
+		.route-point-item strong {
+			color: #0066cc !important;
+			font-weight: bold !important;
+		}
+		.legend-item {
+			display: flex;
+			align-items: center;
+			margin: 4px 0;
+			font-size: 12px;
+		}
+		.legend-color {
+			width: 16px;
+			height: 16px;
+			margin-right: 8px;
+			border-radius: 2px;
+			border: 1px solid #aaa;
+		}
+		.tunnel-legend {
+			margin-top: 8px;
+			padding: 8px;
+			background: #f8f9fa;
+			border-radius: 4px;
+			border: 1px solid #ddd;
+			font-size: 12px;
+		}
+		.tunnel-legend-title {
+			font-weight: bold;
+			margin-bottom: 6px;
+			color: #333;
+			text-align: center;
+		}
+		.leaflet-control-attribution {
+			display: none !important;
+		}
 
-        #basic-map-controls-2 {
-            position: absolute;
-            top: calc(70px + var(--safe-area-inset-top));
-            right: calc(12px + var(--safe-area-inset-right));
-            display: none;
-            flex-direction: row;
-            gap: 8px;
-            z-index: 1003;
-            align-items: center;
-        }
+		#basic-map-controls {
+			position: absolute;
+			top: calc(12px + var(--safe-area-inset-top));
+			right: calc(12px + var(--safe-area-inset-right));
+			display: none;
+			flex-direction: row;
+			gap: 8px;
+			z-index: 1003;
+			align-items: center;
+		}
 
-        /* Элементы управления для Google карт */
-        #google-map-controls {
-            position: absolute;
-            top: calc(12px + var(--safe-area-inset-top));
-            right: calc(12px + var(--safe-area-inset-right));
-            display: none;
-            flex-direction: row;
-            gap: 8px;
-            z-index: 1003;
-            align-items: center;
-        }
+		#basic-map-controls-2 {
+			position: absolute;
+			top: calc(70px + var(--safe-area-inset-top));
+			right: calc(12px + var(--safe-area-inset-right));
+			display: none;
+			flex-direction: row;
+			gap: 8px;
+			z-index: 1003;
+			align-items: center;
+		}
 
-        #google-map-controls-2 {
-            position: absolute;
-            top: calc(70px + var(--safe-area-inset-top));
-            right: calc(12px + var(--safe-area-inset-right));
-            display: none;
-            flex-direction: row;
-            gap: 8px;
-            z-index: 1003;
-            align-items: center;
-        }
+		#google-map-controls {
+			position: absolute;
+			top: calc(12px + var(--safe-area-inset-top));
+			right: calc(12px + var(--safe-area-inset-right));
+			display: none;
+			flex-direction: row;
+			gap: 8px;
+			z-index: 1003;
+			align-items: center;
+		}
 
-        /* Общие стили для кнопок управления */
-        #basic-map-controls button,
-        #basic-map-controls-2 button,
-        #google-map-controls button,
-        #google-map-controls-2 button {
-            width: 40px;
-            height: 40px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(0,0,0,0.3);
-            font-size: 20px;
-            color: #333;
-            padding: 0;
-            margin: 0;
-            font-weight: bold;
-            line-height: 1;
-        }
+		#google-map-controls-2 {
+			position: absolute;
+			top: calc(70px + var(--safe-area-inset-top));
+			right: calc(12px + var(--safe-area-inset-right));
+			display: none;
+			flex-direction: row;
+			gap: 8px;
+			z-index: 1003;
+			align-items: center;
+		}
 
-        #kp-layer-btn, #kp-layer-btn-google, #danger-layer-btn, #danger-layer-btn-google {
-            font-size: 13px !important;
-            font-weight: bold !important;
-        }
+		#basic-map-controls button,
+		#basic-map-controls-2 button,
+		#google-map-controls button,
+		#google-map-controls-2 button {
+			width: 40px;
+			height: 40px;
+			background: white;
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			cursor: pointer;
+			box-shadow: 0 0 8px rgba(0,0,0,0.3);
+			font-size: 20px;
+			color: #333;
+			padding: 0;
+			margin: 0;
+			font-weight: bold;
+			line-height: 1;
+		}
 
-        #all-edges-btn {
-            font-size: 16px !important;
-        }
-        
-        /* Кнопка undo теперь будет первой (крайняя левая) */
-        #basic-map-controls,
-        #google-map-controls {
-            display: none;
-            flex-direction: row;
-            gap: 8px;
-        }
-        
-        /* Кнопки расположены в порядке: undo, lock, kp, danger, all-edges (для Google) */
-        #undo-btn,
-        #undo-btn-google {
-            order: 1;
-        }
-        
-        #lock-btn,
-        #lock-btn-google {
-            order: 2;
-        }
-        
-        #kp-layer-btn,
-        #kp-layer-btn-google {
-            order: 3;
-        }
-        
-        #danger-layer-btn,
-        #danger-layer-btn-google {
-            order: 4;
-        }
-        
-        #all-edges-btn {
-            order: 5;
-        }
-        
-        /* Стили для выделенной точки в окне "Нитка маршрута" */
-        .route-point-item.selected {
-            background-color: #ff9800 !important;
-            border-left: 3px solid #ff5722 !important;
-            font-weight: bold;
-            color: white !important;
-        }
-        
-        .route-point-item.selected strong {
-            color: white !important;
-            font-weight: bold;
-        }
-        
-        .route-point-item.selected .direction-indicator {
-            color: white !important;
-            font-weight: bold;
-        }
-        
-        /* НОВЫЕ СТИЛИ ДЛЯ КУРСОРА В РЕЖИМЕ ДОБАВЛЕНИЯ МЕТОК */
-        .add-point-cursor {
-            cursor: crosshair !important;
-        }
-        
-        /* УВЕЛИЧЕННЫЕ ИКОНЫ ДЛЯ ОПАСНЫХ МЕСТ */
-        #danger-layer-btn::after,
-        #danger-layer-btn-google::after {
-            content: "🚷";
-            font-size: 26px; /* Увеличенная иконка */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-        }
-        
-        #danger-layer-btn,
-        #danger-layer-btn-google {
-            font-size: 0 !important; /* Скрываем текст */
-            padding: 0 !important;
-        }
-        
-        #danger-layer-btn.layer-active::after,
-        #danger-layer-btn-google.layer-active::after {
-            color: white !important;
-        }
-        
-        /* СТИЛИ ДЛЯ ПРОСТОГО И ЧИТАБЕЛЬНОГО ОКНА ПРОСМОТРА МЕТОК */
-        #user-points-panel {
-            position: fixed;
-            bottom: calc(200px + var(--safe-area-inset-bottom)); /* Увеличено с 140px до 200px */
-            left: calc(12px + var(--safe-area-inset-left));
-            background: white;
-            padding: 12px;
-            border: 2px solid #8B008B;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            max-height: 50vh;
-            overflow-y: auto;
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 13px;
-            z-index: 2000;
-            width: 220px;
-            display: none;
-        }
+		#kp-layer-btn, #kp-layer-btn-google, #danger-layer-btn, #danger-layer-btn-google {
+			font-size: 13px !important;
+			font-weight: bold !important;
+		}
 
-        #user-points-panel h3 {
-            margin: 0 0 10px 0;
-            text-align: center;
-            font-size: 14px;
-            color: #8B008B;
-            font-weight: bold;
-            padding-bottom: 6px;
-            border-bottom: 1px solid #ddd;
-        }
+		#all-edges-btn {
+			font-size: 16px !important;
+		}
 
-        #user-points-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-height: 40vh;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
+		#basic-map-controls,
+		#google-map-controls {
+			display: none;
+			flex-direction: row;
+			gap: 8px;
+		}
 
-        .user-point-list-item {
-            cursor: pointer;
-            padding: 8px 10px;
-            border-radius: 6px;
-            transition: all 0.2s;
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-left: 3px solid #8B008B;
-        }
+		#undo-btn,
+		#undo-btn-google {
+			order: 1;
+		}
 
-        .user-point-list-item:hover {
-            background: #f0f0f0;
-            border-color: #ccc;
-        }
+		#lock-btn,
+		#lock-btn-google {
+			order: 2;
+		}
 
-        .user-point-list-item.selected {
-            background: #8B008B;
-            border-color: #6A006A;
-            color: white;
-        }
+		#kp-layer-btn,
+		#kp-layer-btn-google {
+			order: 3;
+		}
 
-        .user-point-list-item.selected .point-name {
-            color: white;
-        }
+		#danger-layer-btn,
+		#danger-layer-btn-google {
+			order: 4;
+		}
 
-        .point-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+		#all-edges-btn {
+			order: 5;
+		}
 
-        .point-index {
-            background: #8B008B;
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
+		.route-point-item.selected {
+			background-color: #ff9800 !important;
+			border-left: 3px solid #ff5722 !important;
+			font-weight: bold;
+			color: white !important;
+		}
 
-        .point-name {
-            font-weight: bold;
-            color: #333;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 140px;
-        }
+		.route-point-item.selected strong {
+			color: white !important;
+			font-weight: bold;
+		}
 
-        .point-comment {
-            font-size: 11px;
-            color: #666;
-            margin-top: 2px;
-        }
+		.route-point-item.selected .direction-indicator {
+			color: white !important;
+			font-weight: bold;
+		}
 
-        .user-points-stats {
-            background: #f5f5f5;
-            border-radius: 4px;
-            padding: 6px 8px;
-            margin-top: 8px;
-            border: 1px solid #ddd;
-            font-size: 11px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+		.add-point-cursor {
+			cursor: crosshair !important;
+		}
 
-        .user-points-stats .count {
-            color: #8B008B;
-            font-weight: bold;
-        }
+		#danger-layer-btn::after,
+		#danger-layer-btn-google::after {
+			content: "🚷";
+			font-size: 26px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			height: 100%;
+		}
 
-        #toggle-user-points-btn {
-            position: absolute;
-            bottom: calc(160px + var(--safe-area-inset-bottom)); /* Увеличено с 100px до 160px */
-            left: calc(12px + var(--safe-area-inset-left));
-            padding: 8px 12px;
-            background: #8B008B;
-            border: 1px solid #6A006A;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            color: white;
-            font-weight: bold;
-        }
+		#danger-layer-btn,
+		#danger-layer-btn-google {
+			font-size: 0 !important;
+			padding: 0 !important;
+		}
 
-        #toggle-user-points-btn:hover {
-            background: #9B009B;
-        }
+		#danger-layer-btn.layer-active::after,
+		#danger-layer-btn-google.layer-active::after {
+			color: white !important;
+		}
 
-        /* Кнопки удаления/редактирования в списке */
-        .point-actions {
-            margin-top: 4px;
-            display: flex;
-            gap: 4px;
-        }
+		#user-points-panel {
+			position: fixed;
+			bottom: calc(200px + var(--safe-area-inset-bottom));
+			left: calc(12px + var(--safe-area-inset-left));
+			background: white;
+			padding: 12px;
+			border: 2px solid #8B008B;
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+			max-height: 50vh;
+			overflow-y: auto;
+			font-family: Calibri, Arial, sans-serif;
+			font-size: 13px;
+			z-index: 1500;
+			width: 220px;
+			display: none;
+		}
 
-        .point-actions button {
-            padding: 2px 6px;
-            font-size: 11px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            background: #f0f0f0;
-            cursor: pointer;
-        }
+		#user-points-panel h3 {
+			margin: 0 0 10px 0;
+			text-align: center;
+			font-size: 14px;
+			color: #8B008B;
+			font-weight: bold;
+			padding-bottom: 6px;
+			border-bottom: 1px solid #ddd;
+		}
 
-        .point-actions button:hover {
-            background: #e0e0e0;
-        }
+		#user-points-list {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			max-height: 40vh;
+			overflow-y: auto;
+			margin-bottom: 10px;
+		}
 
-        .point-actions .delete-btn {
-            color: #c00;
-            border-color: #f99;
-        }
+		.user-point-list-item {
+			cursor: pointer;
+			padding: 8px 10px;
+			border-radius: 6px;
+			transition: all 0.2s;
+			background: #f9f9f9;
+			border: 1px solid #ddd;
+			border-left: 3px solid #8B008B;
+		}
 
-        .point-actions .edit-btn {
-            color: #090;
-            border-color: #9f9;
-        }
-        
-        /* НОВЫЕ СТИЛИ ДЛЯ РЕЖИМА ПЕРЕТАСКИВАНИЯ ТОЧЕК МАРШРУТА */
-        .dragging-point {
-            cursor: grabbing !important;
-            z-index: 10000 !important;
-        }
-        
-        .dragging-mode {
-            cursor: grab !important;
-        }
-        
-        .dragging-mode .point-marker {
-            cursor: grab !important;
-        }
-        
-        .dragging-mode .point-marker:hover {
-            cursor: grab !important;
-        }
-        
-        .dragging-mode-active {
-            cursor: grabbing !important;
-        }
-        
-        .route-point-marker {
-            cursor: pointer;
-        }
-        
-        .route-point-marker:hover {
-            cursor: grab;
-        }
-        
-        .route-point-marker.dragging {
-            cursor: grabbing !important;
-            z-index: 10000 !important;
-        }
-        
-        .drag-guide-line {
-            stroke-dasharray: 5, 5;
-            stroke-width: 2;
-            stroke: #ff9800;
-            fill: none;
-            pointer-events: none;
-        }
-        
-        .drag-target-circle {
-            stroke: #4CAF50;
-            stroke-width: 3;
-            fill: rgba(76, 175, 80, 0.2);
-            pointer-events: none;
-        }
-        
-        .nearest-node-marker {
-            stroke: #2196F3;
-            stroke-width: 2;
-            fill: rgba(33, 150, 243, 0.3);
-            pointer-events: none;
-        }
-        
-        /* Стили для подсветки сегмента при наведении */
-        .route-segment-hover {
-            pointer-events: none !important;
-            z-index: 500 !important;
-        }
-        
-        /* Курсор для добавления точки на маршрут */
-        .route-add-point-cursor {
-            cursor: pointer !important;
-        }
+		.user-point-list-item:hover {
+			background: #f0f0f0;
+			border-color: #ccc;
+		}
+
+		.user-point-list-item.selected {
+			background: #8B008B;
+			border-color: #6A006A;
+			color: white;
+		}
+
+		.user-point-list-item.selected .point-name {
+			color: white;
+		}
+
+		.point-info {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.point-index {
+			background: #8B008B;
+			color: white;
+			width: 20px;
+			height: 20px;
+			border-radius: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 11px;
+			font-weight: bold;
+			flex-shrink: 0;
+		}
+
+		.point-name {
+			font-weight: bold;
+			color: #333;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 140px;
+		}
+
+		.point-comment {
+			font-size: 11px;
+			color: #666;
+			margin-top: 2px;
+		}
+
+		.user-points-stats {
+			background: #f5f5f5;
+			border-radius: 4px;
+			padding: 6px 8px;
+			margin-top: 8px;
+			border: 1px solid #ddd;
+			font-size: 11px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.user-points-stats .count {
+			color: #8B008B;
+			font-weight: bold;
+		}
+
+		.point-actions {
+			margin-top: 4px;
+			display: flex;
+			gap: 4px;
+		}
+
+		.point-actions button {
+			padding: 2px 6px;
+			font-size: 11px;
+			border: 1px solid #ccc;
+			border-radius: 3px;
+			background: #f0f0f0;
+			cursor: pointer;
+		}
+
+		.point-actions button:hover {
+			background: #e0e0e0;
+		}
+
+		.point-actions .delete-btn {
+			color: #c00;
+			border-color: #f99;
+		}
+
+		.point-actions .edit-btn {
+			color: #090;
+			border-color: #9f9;
+		}
+
+		.dragging-point {
+			cursor: grabbing !important;
+			z-index: 10000 !important;
+		}
+
+		.dragging-mode {
+			cursor: grab !important;
+		}
+
+		.dragging-mode .point-marker {
+			cursor: grab !important;
+		}
+
+		.dragging-mode .point-marker:hover {
+			cursor: grab !important;
+		}
+
+		.dragging-mode-active {
+			cursor: grabbing !important;
+		}
+
+		.route-point-marker {
+			cursor: pointer;
+		}
+
+		.route-point-marker:hover {
+			cursor: grab;
+		}
+
+		.route-point-marker.dragging {
+			cursor: grabbing !important;
+			z-index: 10000 !important;
+		}
+
+		.drag-guide-line {
+			stroke-dasharray: 5, 5;
+			stroke-width: 2;
+			stroke: #ff9800;
+			fill: none;
+			pointer-events: none;
+		}
+
+		.drag-target-circle {
+			stroke: #4CAF50;
+			stroke-width: 3;
+			fill: rgba(76, 175, 80, 0.2);
+			pointer-events: none;
+		}
+
+		.nearest-node-marker {
+			stroke: #2196F3;
+			stroke-width: 2;
+			fill: rgba(33, 150, 243, 0.3);
+			pointer-events: none;
+		}
+
+		.route-segment-hover {
+			pointer-events: none !important;
+			z-index: 500 !important;
+		}
+
+		.route-add-point-cursor {
+			cursor: pointer !important;
+		}
+
+		.route-length-label {
+			font-family: Calibri, Arial, sans-serif !important;
+			font-size: 12px !important;
+			font-weight: bold !important;
+			color: red !important;
+			background: white !important;
+			border: 2px solid #0d47a1 !important;
+			border-radius: 4px !important;
+			padding: 2px 6px !important;
+			white-space: nowrap !important;
+			z-index: 1002 !important;
+			text-shadow: none !important;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+			pointer-events: none !important;
+		}
+		 
+		.route-point-marker {
+			pointer-events: auto !important;
+		}
+
+		.route-point-marker-enlarged {
+			stroke-width: 3px !important;
+			filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
+		}
+
+		.route-point-hit-area {
+			pointer-events: auto !important;
+			fill: transparent !important;
+			stroke: transparent !important;
+		}
+
+		#mobile-warning {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.85);
+			z-index: 100000;
+			justify-content: center;
+			align-items: center;
+			color: white;
+			text-align: center;
+			padding: 20px;
+			font-family: Calibri, Arial, sans-serif;
+		}
+
+		#mobile-warning-content {
+			background: #1a1a1a;
+			border-radius: 12px;
+			padding: 30px;
+			max-width: 90%;
+			border: 2px solid #ff9800;
+			box-shadow: 0 0 30px rgba(255, 152, 0, 0.5);
+		}
+
+		#mobile-warning h2 {
+			color: #ff9800;
+			margin-top: 0;
+			font-size: 22px;
+		}
+
+		#mobile-warning p {
+			font-size: 16px;
+			line-height: 1.5;
+			margin: 15px 0;
+		}
+
+		#mobile-warning-timer {
+			font-size: 18px;
+			color: #4CAF50;
+			font-weight: bold;
+			margin: 20px 0;
+		}
+
+		#mobile-warning-close {
+			background: #ff9800;
+			color: white;
+			border: none;
+			padding: 12px 24px;
+			font-size: 16px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-weight: bold;
+			margin-top: 10px;
+		}
+
+		#mobile-warning-close:hover {
+			background: #ffb74d;
+		}
+
+		.user-points-panel-fixed {
+			position: fixed !important;
+		}
     </style>
 </head>
 <body>
+    <!-- Предупреждение для мобильных устройств -->
+    <div id="mobile-warning">
+        <div id="mobile-warning-content">
+            <h2>⚠️ Внимание!</h2>
+            <p>Это приложение разработано для полноценного браузера на ПК.</p>
+            <p>На телефоне оно может работать некорректно: мелкие элементы интерфейса, сложная навигация, возможны лаги.</p>
+            <p>Рекомендуется использовать на компьютере с мышью для лучшего опыта.</p>
+            <div id="mobile-warning-timer">Закроется через: <span id="timer-count">10</span> сек.</div>
+            <button id="mobile-warning-close">Понятно, продолжить</button>
+        </div>
+    </div>
+    
     <div id="menu-button" title="Меню">
         <span></span>
         <span></span>
@@ -1339,9 +1408,10 @@
 
     <!-- Элементы управления для Google карт - ПЕРЕМЕЩЕНЫ ВПРАВО -->
     <div id="google-map-controls" style="display: none;">
-        <!-- Кнопка undo теперь первой (крайняя левая) -->
+        <!-- Кнопка undo скрыта на Google картах -->
         <button id="undo-btn-google" style="display: none;" title="Шаг назад">↩️</button>
-        <button id="lock-btn-google" title="Блокировка маршрута">🔓</button>
+        <!-- Кнопка lock скрыта на Google картах -->
+        <button id="lock-btn-google" title="Блокировка маршрута" style="display: none;">🔓</button>
         <button id="kp-layer-btn-google" title="КП соревнований 2025 г.">КП 2025</button>
         <!-- Увеличенная иконка для опасных мест -->
         <button id="danger-layer-btn-google" title="Опасные места"></button>
@@ -1402,15 +1472,15 @@
         <div class="menu-section route-io-section">
             <div style="text-align: center; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Статистика</div>
             <div style="
-                font-size: 12px;
-                padding: 8px;
-                background: white;
-                border-radius: 4px;
-                border: 1px solid #ddd;
-                text-align: center;
-                line-height: 1.4;
-                margin: 6px 0;
-            ">
+				font-size: 11px;
+				padding: 5px;
+				background: white;
+				border-radius: 3px;
+				border: 1px solid #ddd;
+				text-align: center;
+				line-height: 1.2;
+				margin: 3px 0;
+			">
                 Посчитанная протяженность всех штреков:<br>
                 <span id="total-tunnel-length" style="
                     font-weight: bold;
@@ -1431,7 +1501,6 @@
     </div>
     
     <button id="clear-route-btn" title="Удалить весь маршрут">🗑️ Очистить маршрут</button>
-    <button id="toggle-user-points-btn">📌 Мои метки</button>
     
     <!-- Окно просмотра пользовательских меток -->
     <div id="user-points-panel">
@@ -1587,6 +1656,9 @@
         let userPointMarkers = [], userPointLabels = [];
         let searchPanelVisible = false, searchHighlightMarker = null, searchHaloMarker = null;
         let lastSearchQuery = '';
+        let routeLengthLabelMarker = null; // Для метки с длиной маршрута
+        let userPointsPanelFixed = false; // Для предотвращения закрытия окна меток
+        let mobileWarningShown = false; // Флаг показа предупреждения для мобильных
 
         // ==================== НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ПЕРЕТАСКИВАНИЯ ТОЧЕК ====================
         let isDraggingPoint = false;
@@ -1662,23 +1734,24 @@
         function updateControlsVisibility() {
             const isGoogle = currentMapType === 'google-satellite';
             
+            // Скрываем/показываем элементы управления маршрутом
+            document.getElementById('clear-route-btn').style.display = isGoogle ? 'none' : (selectedPoints.length > 0 ? 'block' : 'none');
+            document.getElementById('show-route-points-btn').style.display = isGoogle ? 'none' : 'none';
+            document.getElementById('route-points-popup').style.display = 'none';
+            
             // Показываем/скрываем соответствующие блоки управления
             if (isGoogle) {
                 document.getElementById('google-map-controls').style.display = 'flex';
                 document.getElementById('basic-map-controls').style.display = 'none';
                 
+                // На Google картах скрываем кнопки связанные с маршрутом
+                document.getElementById('undo-btn-google').style.display = 'none';
+                document.getElementById('lock-btn-google').style.display = 'none';
+                
                 // Обновляем состояние кнопок
                 document.getElementById('kp-layer-btn-google').classList.toggle('layer-active', kpLayerVisible);
                 document.getElementById('danger-layer-btn-google').classList.toggle('layer-active', dangerLayerVisible);
                 document.getElementById('all-edges-btn').classList.toggle('layer-active', allEdgesLayerVisible);
-                document.getElementById('lock-btn-google').textContent = routeLocked ? '🔒' : '🔓';
-                
-                // Обновляем видимость кнопки undo
-                document.getElementById('undo-btn-google').style.display = selectedPoints.length > 0 ? 'flex' : 'none';
-                
-                // На Google картах скрываем окно "Нитка маршрута" и его кнопку
-                document.getElementById('route-points-popup').style.display = 'none';
-                document.getElementById('show-route-points-btn').style.display = 'none';
                 
                 // Обновляем статус для Google карт
                 if (kpLayerVisible) {
@@ -1707,6 +1780,8 @@
                     document.getElementById('status').textContent = 'Готов к построению маршрута. Кликните на схему для выбора точек.';
                 } else if (selectedPoints.length === 1) {
                     document.getElementById('status').textContent = 'Выбрана первая точка. Выберите вторую.';
+                } else {
+                    document.getElementById('status').textContent = 'Маршрут построен';
                 }
             }
         }
@@ -1934,12 +2009,10 @@
         // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
         function isSamePoint(coords1, coords2, tolerance = 0.001) {
             // Проверяет, совпадают ли две точки с заданной точностью
-            if (!coords1 || !coords2) return false;
+            if (!coords1 || !coords2 || !Array.isArray(coords1) || !Array.isArray(coords2)) return false;
+            if (coords1.length < 2 || coords2.length < 2) return false;
             
-            const dx = Math.abs(coords1[0] - coords2[0]);
-            const dy = Math.abs(coords1[1] - coords2[1]);
-            
-            return dx < tolerance && dy < tolerance;
+            return Math.abs(coords1[0] - coords2[0]) < tolerance && Math.abs(coords1[1] - coords2[1]) < tolerance;
         }
 
         function pointToSegmentDistance(p, a, b) {
@@ -2221,6 +2294,12 @@
                     routeLabelMarkers.forEach(marker => map.removeLayer(marker));
                     routePointMarkers = [];
                     routeLabelMarkers = [];
+                    
+                    // Удаляем метку длины маршрута
+                    if (routeLengthLabelMarker) {
+                        map.removeLayer(routeLengthLabelMarker);
+                        routeLengthLabelMarker = null;
+                    }
             
                     fullRoutePath = [];
                     const routeGroup = L.featureGroup();
@@ -2256,10 +2335,12 @@
             
                     if (currentMapType !== 'google-satellite') {
                         routeLayer = routeGroup.addTo(map);
-                        document.getElementById('status').innerHTML = 
-                            `Маршрут: <span class="route-distance">${totalDistance.toFixed(1)} м</span>`;
                         
-                        addRoutePointLabels();
+                        // Убираем отображение длины маршрута в статусе
+                        document.getElementById('status').innerHTML = 
+                            `Маршрут построен`;
+                        
+                        addRoutePointLabels(totalDistance);
                         addRouteJsonPointLabels();
                         setupDragAndDropForRoutePoints();
                     }
@@ -2292,51 +2373,105 @@
             }, 10);
         }
         
-        function addRoutePointLabels() {
-            routeLabelMarkers.forEach(marker => map.removeLayer(marker));
-            routeLabelMarkers = [];
-            
-            selectedPoints.forEach((pt, idx) => {
-                const latlng = [pt[1], pt[0]];
-                const labelText = idx === 0 ? 'СТАРТ' : idx === selectedPoints.length - 1 ? 'ФИНИШ' : String(idx);
-                
-                // Для старта и финиша используем другой якорь, чтобы надпись была выше и ближе
-                let iconAnchor;
-                if (idx === 0 || idx === selectedPoints.length - 1) {
-                    // Для старта и финиша - надпись прямо над точкой
-                    iconAnchor = [5, 25];
-                } else {
-                    // Для остальных точек - стандартное смещение
-                    iconAnchor = [10, 22];
-                }
-                
-                const label = L.marker(latlng, {
-                    icon: L.divIcon({
-                        className: 'route-point-label',
-                        html: `<div style="
-                            background: linear-gradient(135deg, #ff9800, #ffb74d);
-                            border: 2px solid #0d47a1;
-                            border-radius: 4px;
-                            padding: 2px 6px;
-                            color: #0d47a1;
-                            font-weight: bold;
-                            font-size: 12px;
-                            white-space: nowrap;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                            transform: translateY(-8px);
-                        ">${labelText}</div>`,
-                        iconSize: null,
-                        iconAnchor: iconAnchor
-                    }),
-                    interactive: false,
-                    zIndexOffset: 1000
-                }).addTo(map);
-                
-                routeLabelMarkers.push(label);
-                updatePointMarkerStyle(idx);
-            });
-        }
+        // ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДОБАВЛЕНИЯ ПОДПИСЕЙ К ТОЧКАМ ====================
+		function addRoutePointLabels(totalDistance) {
+			routeLabelMarkers.forEach(marker => map.removeLayer(marker));
+			routeLabelMarkers = [];
+			
+			// Удаляем старую метку длины маршрута
+			if (routeLengthLabelMarker) {
+				map.removeLayer(routeLengthLabelMarker);
+				routeLengthLabelMarker = null;
+			}
+			
+			selectedPoints.forEach((pt, idx) => {
+				const latlng = [pt[1], pt[0]];
+				
+				// Для всех точек, кроме последней, создаем обычные подписи
+				if (idx < selectedPoints.length - 1) {
+					const labelText = idx === 0 ? 'СТАРТ' : String(idx);
+					
+					const label = L.marker(latlng, {
+						icon: L.divIcon({
+							className: 'route-point-label',
+							html: `<div style="
+								background: linear-gradient(135deg, #ff9800, #ffb74d);
+								border: 2px solid #0d47a1;
+								border-radius: 4px;
+								padding: 2px 6px;
+								color: #0d47a1;
+								font-weight: bold;
+								font-size: 12px;
+								white-space: nowrap;
+								box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+								transform: translateY(-8px);
+							">${labelText}</div>`,
+							iconSize: null,
+							iconAnchor: [10, 22]
+						}),
+						interactive: false,
+						zIndexOffset: 1000
+					}).addTo(map);
+					
+					routeLabelMarkers.push(label);
+				}
+				updatePointMarkerStyle(idx);
+			});
+			
+			// ОСОБАЯ ОБРАБОТКА ДЛЯ ТОЧКИ "ФИНИШ" - создаем её вместе с меткой длины
+			if (selectedPoints.length > 1 && totalDistance) {
+				const finishPoint = selectedPoints[selectedPoints.length - 1];
+				const latlng = [finishPoint[1], finishPoint[0]];
+				
+				// Создаем ОДИН контейнер с двумя метками: "ФИНИШ" и "L = X м"
+				const combinedHtml = `
+					<div style="
+						display: flex;
+						align-items: center;
+						gap: 3px; /* 3 пикселя между метками */
+						transform: translateY(-8px);
+					">
+						<div style="
+							background: linear-gradient(135deg, #ff9800, #ffb74d);
+							border: 2px solid #0d47a1;
+							border-radius: 4px;
+							padding: 2px 6px;
+							color: #0d47a1;
+							font-weight: bold;
+							font-size: 12px;
+							white-space: nowrap;
+							box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+						">ФИНИШ</div>
+						<div style="
+							background: white;
+							border: 2px solid red;
+							border-radius: 4px;
+							padding: 2px 6px;
+							color: red;
+							font-weight: bold;
+							font-size: 12px;
+							white-space: nowrap;
+							box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+						">L = ${totalDistance.toFixed(1)} м</div>
+					</div>
+				`;
+				
+				const finishLabel = L.marker(latlng, {
+					icon: L.divIcon({
+						className: 'route-point-label',
+						html: combinedHtml,
+						iconSize: null,
+						iconAnchor: [70, 25] // Центрируем весь блок
+					}),
+					interactive: false,
+					zIndexOffset: 1000
+				}).addTo(map);
+				
+				routeLabelMarkers.push(finishLabel);
+			}
+		}
         
+        // ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ СТИЛЯ МАРКЕРОВ ====================
         function updatePointMarkerStyle(idx) {
             if (pointMarkers[idx]) {
                 const fillColor = idx === 0 ? 'green' : idx === pointMarkers.length - 1 ? 'blue' : 'red';
@@ -2344,7 +2479,26 @@
                     color: 'white',
                     fillColor: fillColor,
                     weight: 2,
-                    className: 'route-point-marker'
+                    className: 'route-point-marker route-point-marker-enlarged'
+                });
+                
+                // Добавляем невидимую область для увеличения кликабельности
+                const latlng = pointMarkers[idx].getLatLng();
+                const hitArea = L.circleMarker(latlng, {
+                    radius: 15, // Увеличенный радиус для кликабельности
+                    color: 'transparent',
+                    fillColor: 'transparent',
+                    fillOpacity: 0,
+                    weight: 0,
+                    className: 'route-point-hit-area',
+                    interactive: true
+                }).addTo(map);
+                
+                // Связываем hit area с маркером
+                hitArea.on('mousedown', function(e) {
+                    // Прокидываем событие на основной маркер
+                    const originalEvent = e.originalEvent || e;
+                    pointMarkers[idx].fire('mousedown', { latlng: e.latlng, originalEvent: originalEvent });
                 });
             }
         }
@@ -2427,10 +2581,11 @@
                     const displayName = p.name.length > 15 ? p.name.substring(0, 12) + '...' : p.name;
                     const directionArrow = getDirectionArrow(p.directionAngle);
                     
-                    // Определяем, является ли эта точка выбранной
-                    const isSelected = (selectedRoutePointIndex === idx) ? ' selected' : '';
+                    // ОТМЕНА ВЫДЕЛЕНИЯ ТОЧЕК ПРИ НАЧАЛЬНОМ ПОСТРОЕНИИ
+                    // Точки не выделяются оранжевым цветом при начальном построении
+                    const isSelected = false; // Всегда false при начальном построении
                     
-                    return `<div class="route-point-item${isSelected}" data-index="${idx}" data-lng="${p.coords[0]}" data-lat="${p.coords[1]}" data-name="${p.name}">
+                    return `<div class="route-point-item${isSelected ? ' selected' : ''}" data-index="${idx}" data-lng="${p.coords[0]}" data-lat="${p.coords[1]}" data-name="${p.name}">
                         <span><strong>${idx + 1}.</strong> ${displayName}</span>
                         <span class="direction-indicator" title="Направление движения после точки">${directionArrow}</span>
                     </div>`;
@@ -2448,6 +2603,9 @@
                                                  (стрелки направления указаны относительно севера)
                                              </div>`;
                 }
+                
+                // Сбрасываем выбранную точку
+                selectedRoutePointIndex = null;
                 
                 // Добавляем обработчики кликов
                 document.querySelectorAll('.route-point-item').forEach((item, idx) => {
@@ -2520,20 +2678,10 @@
                             // Убираем подсветку через 10 секунд, но оставляем выделение в списке
                             setTimeout(() => {
                                 clearSearchHighlight();
-                                // Можно убрать выделение из списка после убирания подсветки
-                                // el.classList.remove('selected');
                             }, 10000);
                         }, 1500);
                     });
                 });
-                
-                // Если была выбрана точка до обновления списка, восстановим выделение
-                if (selectedRoutePointIndex !== null) {
-                    const selectedItem = document.querySelector(`.route-point-item[data-index="${selectedRoutePointIndex}"]`);
-                    if (selectedItem) {
-                        selectedItem.classList.add('selected');
-                    }
-                }
             } else {
                 document.getElementById('show-route-points-btn').style.display = 'none';
                 document.getElementById('route-points-popup').style.display = 'none';
@@ -2575,37 +2723,191 @@
         }
         
         function clearRoute() {
-            if (routeLayer) map.removeLayer(routeLayer);
-            pointMarkers.forEach(marker => map.removeLayer(marker));
-            routePointMarkers.forEach(marker => map.removeLayer(marker));
-            routeLabelMarkers.forEach(marker => map.removeLayer(marker));
+			clearAllRouteMarkers();
+			
+			selectedPoints = [];
+			fullRoutePath = [];
+			routeLocked = false;
+			
+			document.getElementById('lock-btn').textContent = '🔓';
+			document.getElementById('lock-btn-google').textContent = '🔓';
+			
+			// Обновляем статус в зависимости от типа карты
+			if (currentMapType === 'google-satellite') {
+				document.getElementById('status').textContent = 'Карта загружена. Используйте кнопки для управления слоями.';
+			} else {
+				document.getElementById('status').textContent = 'Готов к построению маршрута';
+			}
+			
+			document.getElementById('clear-route-btn').style.display = 'none';
+			
+			// Закрываем окно "Нитка маршрута"
+			document.getElementById('route-points-popup').style.display = 'none';
+			document.getElementById('show-route-points-btn').style.display = 'none';
+			document.getElementById('show-route-points-btn').textContent = '📍';
+			
+			updateRouteButtonsVisibility();
+		}
         
-            routeLayer = null;
-            selectedPoints = [];
-            pointMarkers = [];
-            routePointMarkers = [];
-            routeLabelMarkers = [];
-            fullRoutePath = [];
-            routeLocked = false;
+        // ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ UNDO ====================
+        function undoLastPoint() {
+			if (selectedPoints.length === 0) return;
+			
+			// Сохраняем информацию о том, какая точка удаляется
+			const pointToRemoveIndex = selectedPoints.length - 2; // Предпоследняя точка (если есть)
+			const isRemovingMiddlePoint = (selectedPoints.length > 2);
+			
+			if (selectedPoints.length > 2) {
+				// Удаляем предпоследнюю точку (точку посередине)
+				selectedPoints.splice(pointToRemoveIndex, 1);
+				
+				// Удаляем маркер удаляемой точки
+				if (pointMarkers[pointToRemoveIndex]) {
+					map.removeLayer(pointMarkers[pointToRemoveIndex]);
+					pointMarkers.splice(pointToRemoveIndex, 1);
+				}
+				
+				// Удаляем подпись удаляемой точки
+				if (routeLabelMarkers[pointToRemoveIndex]) {
+					map.removeLayer(routeLabelMarkers[pointToRemoveIndex]);
+					routeLabelMarkers.splice(pointToRemoveIndex, 1);
+				}
+				
+				// Обновляем оставшиеся маркеры и подписи
+				updateRemainingMarkersAfterUndo(pointToRemoveIndex);
+				
+				// Перестраиваем маршрут с оставшимися точками
+				buildFullRoute();
+				
+				document.getElementById('status').textContent = `Удалена точка ${pointToRemoveIndex + 1}. Маршрут перестроен.`;
+				
+			} else if (selectedPoints.length === 2) {
+				// Если только 2 точки (Старт и Финиш), удаляем Финиш
+				selectedPoints.pop();
+				
+				// Удаляем маркер Финиша
+				const lastMarker = pointMarkers.pop();
+				if (lastMarker) map.removeLayer(lastMarker);
+				
+				// Удаляем подпись Финиша
+				const lastLabel = routeLabelMarkers.pop();
+				if (lastLabel) map.removeLayer(lastLabel);
+				
+				// Удаляем маршрут и связанные элементы
+				if (routeLayer) map.removeLayer(routeLayer);
+				routeLayer = null;
+				
+				routePointMarkers.forEach(marker => map.removeLayer(marker));
+				routePointMarkers = [];
+				
+				// Удаляем метку длины маршрута
+				if (routeLengthLabelMarker) {
+					map.removeLayer(routeLengthLabelMarker);
+					routeLengthLabelMarker = null;
+				}
+				
+				// Оставляем только подпись Старта (если она есть)
+				if (routeLabelMarkers.length > 1) {
+					// Удаляем все подписи, кроме первой
+					for (let i = 1; i < routeLabelMarkers.length; i++) {
+						if (routeLabelMarkers[i]) {
+							map.removeLayer(routeLabelMarkers[i]);
+						}
+					}
+					routeLabelMarkers = routeLabelMarkers.slice(0, 1);
+				}
+				
+				document.getElementById('status').textContent = 'Выбрана первая точка. Выберите вторую.';
+				document.getElementById('show-route-points-btn').style.display = 'none';
+				document.getElementById('route-points-popup').style.display = 'none';
+				
+			} else if (selectedPoints.length === 1) {
+				// Если только 1 точка (Старт), удаляем всё
+				clearRoute();
+				document.getElementById('status').textContent = 'Готов к построению маршрута';
+			}
+			
+			updateRouteButtonsVisibility();
+		}
+		
+		// Функция для полной очистки маршрута при удалении всех точек
+		function clearAllRouteMarkers() {
+			// Удаляем все маркеры точек маршрута
+			pointMarkers.forEach(marker => {
+				if (marker && map.hasLayer(marker)) {
+					map.removeLayer(marker);
+				}
+			});
+			pointMarkers = [];
+			
+			// Удаляем все подписи
+			routeLabelMarkers.forEach(marker => {
+				if (marker && map.hasLayer(marker)) {
+					map.removeLayer(marker);
+				}
+			});
+			routeLabelMarkers = [];
+			
+			// Удаляем маршрут
+			if (routeLayer && map.hasLayer(routeLayer)) {
+				map.removeLayer(routeLayer);
+				routeLayer = null;
+			}
+			
+			// Удаляем дополнительные точки маршрута
+			routePointMarkers.forEach(marker => {
+				if (marker && map.hasLayer(marker)) {
+					map.removeLayer(marker);
+				}
+			});
+			routePointMarkers = [];
+			
+			// Удаляем метку длины маршрута
+			if (routeLengthLabelMarker && map.hasLayer(routeLengthLabelMarker)) {
+				map.removeLayer(routeLengthLabelMarker);
+				routeLengthLabelMarker = null;
+			}
+		}
+
+		// Вспомогательная функция для обновления маркеров после удаления
+		function updateRemainingMarkersAfterUndo(removedIndex) {
+			// Обновляем подписи оставшихся точек
+			for (let i = removedIndex; i < routeLabelMarkers.length; i++) {
+				if (routeLabelMarkers[i]) {
+					map.removeLayer(routeLabelMarkers[i]);
+				}
+			}
+			routeLabelMarkers = routeLabelMarkers.slice(0, removedIndex);
+			
+			// Удаляем все точки маршрута (они будут перестроены в buildFullRoute)
+			routePointMarkers.forEach(marker => {
+				if (marker && map.hasLayer(marker)) {
+					map.removeLayer(marker);
+				}
+			});
+			routePointMarkers = [];
+			
+			// Удаляем маршрут
+			if (routeLayer) {
+				map.removeLayer(routeLayer);
+				routeLayer = null;
+			}
+			
+			// Удаляем метку длины маршрута
+			if (routeLengthLabelMarker) {
+				map.removeLayer(routeLengthLabelMarker);
+				routeLengthLabelMarker = null;
+			}
+		}
         
-            document.getElementById('lock-btn').textContent = '🔓';
-            document.getElementById('lock-btn-google').textContent = '🔓';
+        function updateRouteButtonsVisibility() {
+            const clearBtn = document.getElementById('clear-route-btn');
+            const showBtn = selectedPoints.length > 0;
             
-            // Обновляем статус в зависимости от типа карты
-            if (currentMapType === 'google-satellite') {
-                document.getElementById('status').textContent = 'Карта загружена. Используйте кнопки для управления слоями.';
-            } else {
-                document.getElementById('status').textContent = 'Готов к построению маршрута';
-            }
+            clearBtn.style.display = showBtn ? 'block' : 'none';
             
-            document.getElementById('clear-route-btn').style.display = 'none';
-            
-            // Закрываем окно "Нитка маршрута"
-            document.getElementById('route-points-popup').style.display = 'none';
-            document.getElementById('show-route-points-btn').style.display = 'none';
-            document.getElementById('show-route-points-btn').textContent = '📍';
-            
-            updateRouteButtonsVisibility();
+            const isGoogle = currentMapType === 'google-satellite';
+            document.getElementById(isGoogle ? 'undo-btn-google' : 'undo-btn').style.display = showBtn ? 'flex' : 'none';
         }
         
         // ==================== ФУНКЦИЯ ДЛЯ НАХОЖДЕНИЯ БЛИЖАЙШЕГО СЕГМЕНТА МАРШРУТА ====================
@@ -2655,107 +2957,107 @@
         
         // ==================== ФУНКЦИЯ ДЛЯ ВСТАВКИ ТОЧКИ В МАРШРУТ ====================
         function insertPointInRoute(segment, clickCoords) {
-			if (!segment || selectedPoints.length < 2) return;
-			
-			// Находим ближайший узел графа к точке клика
-			const nearestNode = findNearestGraphNode(clickCoords, 10);
-			if (!nearestNode) {
-				showCustomAlert('Не удалось найти ближайший узел графа. Попробуйте кликнуть ближе к тоннелям.');
-				return;
-			}
-			
-			// Находим, между какими пользовательскими точками находится этот сегмент
-			// Для этого ищем сегмент в полном пути маршрута
-			let startIndexInFullPath = -1;
-			let endIndexInFullPath = -1;
-			
-			// Находим индексы начала и конца сегмента в полном пути
-			for (let i = 0; i < fullRoutePath.length; i++) {
-				const point = fullRoutePath[i];
-				if (isSamePoint(point, segment.start, 0.001)) {
-					startIndexInFullPath = i;
-				}
-				if (isSamePoint(point, segment.end, 0.001)) {
-					endIndexInFullPath = i;
-				}
-			}
-			
-			if (startIndexInFullPath === -1 || endIndexInFullPath === -1) {
-				showCustomAlert('Не удалось определить положение сегмента в маршруте');
-				return;
-			}
-			
-			// Теперь находим, между какими пользовательскими точками находится этот сегмент
-			let startPointIndex = -1;
-			let endPointIndex = -1;
-			let insertIndex = -1;
-			
-			// Проходим по всем пользовательским точкам и смотрим, какие из них находятся до и после сегмента
-			for (let i = 0; i < selectedPoints.length; i++) {
-				const pointKey = selectedPoints[i].join(',');
-				
-				// Проверяем, соответствует ли эта точка какому-либо узлу на маршруте до сегмента
-				for (let j = 0; j <= startIndexInFullPath; j++) {
-					const routePointKey = fullRoutePath[j].join(',');
-					if (pointKey === routePointKey) {
-						startPointIndex = i;
-						break;
-					}
-				}
-				
-				// Проверяем, соответствует ли эта точка какому-либо узлу на маршруте после сегмента
-				for (let j = endIndexInFullPath; j < fullRoutePath.length; j++) {
-					const routePointKey = fullRoutePath[j].join(',');
-					if (pointKey === routePointKey) {
-						if (endPointIndex === -1 || i < endPointIndex) {
-							endPointIndex = i;
-						}
-						break;
-					}
-				}
-			}
-			
-			// Если не нашли явное соответствие, определяем позицию по порядку сегментов
-			if (startPointIndex === -1 || endPointIndex === -1) {
-				// Находим примерную позицию сегмента в маршруте (от 0 до 1)
-				const segmentPosition = (startIndexInFullPath + endIndexInFullPath) / 2 / fullRoutePath.length;
-				
-				// Определяем, после какой точки вставлять новую точку
-				insertIndex = Math.floor(segmentPosition * selectedPoints.length);
-				insertIndex = Math.max(1, Math.min(selectedPoints.length - 1, insertIndex));
-			} else if (endPointIndex > startPointIndex) {
-				// Если нашли обе точки и они в правильном порядке
-				insertIndex = endPointIndex;
-			} else {
-				// Если порядок неправильный, вставляем после startPointIndex
-				insertIndex = startPointIndex + 1;
-			}
-			
-			// Ограничиваем insertIndex в пределах массива
-			insertIndex = Math.max(1, Math.min(selectedPoints.length - 1, insertIndex));
-			
-			// Вставляем новую точку в массив selectedPoints
-			selectedPoints.splice(insertIndex, 0, nearestNode);
-			
-			// Перестраиваем маркеры
-			rebuildPointMarkers();
-			
-			// Перестраиваем маршрут
-			buildFullRoute();
-			
-			// Показываем сообщение
-			const newPointNumber = insertIndex + 1;
-			document.getElementById('status').textContent = 
-				`Добавлена точка ${newPointNumber}. Точки с номерами ${newPointNumber + 1} и далее смещены.`;
-		}
+            if (!segment || selectedPoints.length < 2) return;
+            
+            // Находим ближайший узел графа к точке клика
+            const nearestNode = findNearestGraphNode(clickCoords, 10);
+            if (!nearestNode) {
+                showCustomAlert('Не удалось найти ближайший узел графа. Попробуйте кликнуть ближе к тоннелям.');
+                return;
+            }
+            
+            // Находим, между какими пользовательскими точками находится этот сегмент
+            // Для этого ищем сегмент в полном пути маршрута
+            let startIndexInFullPath = -1;
+            let endIndexInFullPath = -1;
+            
+            // Находим индексы начала и конца сегмента в полном пути
+            for (let i = 0; i < fullRoutePath.length; i++) {
+                const point = fullRoutePath[i];
+                if (isSamePoint(point, segment.start, 0.001)) {
+                    startIndexInFullPath = i;
+                }
+                if (isSamePoint(point, segment.end, 0.001)) {
+                    endIndexInFullPath = i;
+                }
+            }
+            
+            if (startIndexInFullPath === -1 || endIndexInFullPath === -1) {
+                showCustomAlert('Не удалось определить положение сегмента в маршруте');
+                return;
+            }
+            
+            // Теперь находим, между какими пользовательскими точками находится этот сегмент
+            let startPointIndex = -1;
+            let endPointIndex = -1;
+            let insertIndex = -1;
+            
+            // Проходим по всем пользовательским точкам и смотрим, какие из них находятся до и после сегмента
+            for (let i = 0; i < selectedPoints.length; i++) {
+                const pointKey = selectedPoints[i].join(',');
+                
+                // Проверяем, соответствует ли эта точка какому-либо узлу на маршруте до сегмента
+                for (let j = 0; j <= startIndexInFullPath; j++) {
+                    const routePointKey = fullRoutePath[j].join(',');
+                    if (pointKey === routePointKey) {
+                        startPointIndex = i;
+                        break;
+                    }
+                }
+                
+                // Проверяем, соответствует ли эта точка какому-либо узлу на маршруте после сегмента
+                for (let j = endIndexInFullPath; j < fullRoutePath.length; j++) {
+                    const routePointKey = fullRoutePath[j].join(',');
+                    if (pointKey === routePointKey) {
+                        if (endPointIndex === -1 || i < endPointIndex) {
+                            endPointIndex = i;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Если не нашли явное соответствие, определяем позицию по порядку сегментов
+            if (startPointIndex === -1 || endPointIndex === -1) {
+                // Находим примерную позицию сегмента в маршруте (от 0 до 1)
+                const segmentPosition = (startIndexInFullPath + endIndexInFullPath) / 2 / fullRoutePath.length;
+                
+                // Определяем, после какой точки вставлять новую точку
+                insertIndex = Math.floor(segmentPosition * selectedPoints.length);
+                insertIndex = Math.max(1, Math.min(selectedPoints.length - 1, insertIndex));
+            } else if (endPointIndex > startPointIndex) {
+                // Если нашли обе точки и они в правильном порядке
+                insertIndex = endPointIndex;
+            } else {
+                // Если порядок неправильный, вставляем после startPointIndex
+                insertIndex = startPointIndex + 1;
+            }
+            
+            // Ограничиваем insertIndex в пределах массива
+            insertIndex = Math.max(1, Math.min(selectedPoints.length - 1, insertIndex));
+            
+            // Вставляем новую точку в массив selectedPoints
+            selectedPoints.splice(insertIndex, 0, nearestNode);
+            
+            // Перестраиваем маркеры
+            rebuildPointMarkers();
+            
+            // Перестраиваем маршрут
+            buildFullRoute();
+            
+            // Показываем сообщение
+            const newPointNumber = insertIndex + 1;
+            document.getElementById('status').textContent = 
+                `Добавлена точка ${newPointNumber}. Точки с номерами ${newPointNumber + 1} и далее смещены.`;
+        }
 
-		// ==================== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СРАВНЕНИЯ ТОЧЕК ====================
-		function isSamePoint(a, b, tolerance = 0.001) {
-			if (!a || !b || !Array.isArray(a) || !Array.isArray(b)) return false;
-			if (a.length < 2 || b.length < 2) return false;
-			
-			return Math.abs(a[0] - b[0]) < tolerance && Math.abs(a[1] - b[1]) < tolerance;
-		}
+        // ==================== ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СРАВНЕНИЯ ТОЧЕК ====================
+        function isSamePoint(a, b, tolerance = 0.001) {
+            if (!a || !b || !Array.isArray(a) || !Array.isArray(b)) return false;
+            if (a.length < 2 || b.length < 2) return false;
+            
+            return Math.abs(a[0] - b[0]) < tolerance && Math.abs(a[1] - b[1]) < tolerance;
+        }
         
         // ==================== ФУНКЦИЯ ДЛЯ ПЕРЕСТРОЙКИ МАРКЕРОВ ====================
         function rebuildPointMarkers() {
@@ -2767,6 +3069,12 @@
             routeLabelMarkers.forEach(marker => map.removeLayer(marker));
             routeLabelMarkers = [];
             
+            // Удаляем метку длины маршрута
+            if (routeLengthLabelMarker) {
+                map.removeLayer(routeLengthLabelMarker);
+                routeLengthLabelMarker = null;
+            }
+            
             // Создаем новые маркеры для всех точек
             selectedPoints.forEach((pt, idx) => {
                 const fillColor = idx === 0 ? 'green' : idx === selectedPoints.length - 1 ? 'blue' : 'red';
@@ -2776,7 +3084,7 @@
                     fillColor: fillColor,
                     weight: 2,
                     fillOpacity: 1,
-                    className: 'route-point-marker'
+                    className: 'route-point-marker route-point-marker-enlarged'
                 }).addTo(map);
                 pointMarkers.push(marker);
             });
@@ -2786,21 +3094,12 @@
         }
         
         function handleMapClick(e) {
-            // На Google картах не строим маршруты
-            if (currentMapType === 'google-satellite') {
-                return;
-            }
-            
-            if (isEditMode) {
-                handleEditModeClick(e);
-                return;
-            }
-            
             // Проверяем режим добавления меток
             if (isUserPointsMode) {
                 console.log('Клик в режиме добавления метки');
                 let coords;
                 if (currentMapType === 'google-satellite') {
+                    // Для Google карт используем WGS84 координаты
                     coords = wgs84ToEpsg3857(e.latlng.lat, e.latlng.lng);
                 } else {
                     coords = [e.latlng.lng, e.latlng.lat];
@@ -2811,6 +3110,11 @@
             }
             
             if (menuOpen || segments.length === 0 || routeLocked) return;
+            
+            // На Google картах не строим маршруты
+            if (currentMapType === 'google-satellite') {
+                return;
+            }
             
             const click = [e.latlng.lng, e.latlng.lat];
             
@@ -2826,7 +3130,9 @@
             }
             
             // Стандартная обработка клика для добавления точки маршрута
-            const TOLERANCE = 4;
+            // УВЕЛИЧЕННЫЙ ТОЛЕРАНС ДЛЯ ЛУЧШЕЙ КЛИКАБЕЛЬНОСТИ
+            const TOLERANCE = 8; // Увеличен с 4 до 8
+            
             let nearest = null;
             let minDist = Infinity;
             
@@ -2853,7 +3159,7 @@
                 fillColor: pointNumber === 1 ? 'green' : pointNumber === selectedPoints.length ? 'blue' : 'red',
                 weight: 2,
                 fillOpacity: 1,
-                className: 'route-point-marker'
+                className: 'route-point-marker route-point-marker-enlarged'
             }).addTo(map);
             
             pointMarkers.push(marker);
@@ -2909,7 +3215,7 @@
                     color: 'white',
                     fillColor: fillColor,
                     weight: 2,
-                    className: 'route-point-marker'
+                    className: 'route-point-marker route-point-marker-enlarged'
                 });
             });
             
@@ -2921,42 +3227,7 @@
             updateLabelVisibility();
         }
         
-        function undoLastPoint() {
-            if (selectedPoints.length === 0) return;
-            
-            selectedPoints.pop();
-            const lastMarker = pointMarkers.pop();
-            if (lastMarker) map.removeLayer(lastMarker);
-            
-            if (selectedPoints.length === 0) {
-                clearRoute();
-            } else if (selectedPoints.length === 1) {
-                if (routeLayer) map.removeLayer(routeLayer);
-                routeLayer = null;
-                routePointMarkers.forEach(marker => map.removeLayer(marker));
-                routeLabelMarkers.forEach(marker => map.removeLayer(marker));
-                routePointMarkers = [];
-                routeLabelMarkers = [];
-                document.getElementById('status').textContent = 'Выбрана первая точка. Выберите вторую.';
-                document.getElementById('show-route-points-btn').style.display = 'none';
-                document.getElementById('route-points-popup').style.display = 'none';
-            } else {
-                buildFullRoute();
-            }
-            updateRouteButtonsVisibility();
-        }
-        
-        function updateRouteButtonsVisibility() {
-            const clearBtn = document.getElementById('clear-route-btn');
-            const showBtn = selectedPoints.length > 0;
-            
-            clearBtn.style.display = showBtn ? 'block' : 'none';
-            
-            const isGoogle = currentMapType === 'google-satellite';
-            document.getElementById(isGoogle ? 'undo-btn-google' : 'undo-btn').style.display = showBtn ? 'flex' : 'none';
-        }
-        
-        // ==================== ФУНКЦИИ ДЛЯ ПЕРЕТАСКИВАНИЯ ТОЧЕК МАРШРУТА ====================
+        // ==================== НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ПЕРЕТАСКИВАНИЯ ТОЧЕК ====================
         function setupDragAndDropForRoutePoints() {
             // Снимаем предыдущие обработчики
             pointMarkers.forEach((marker, index) => {
@@ -2965,7 +3236,8 @@
                 marker.off('mousemove');
                 
                 // Устанавливаем курсор "рука" при наведении
-                marker.getElement().style.cursor = 'grab';
+                const element = marker.getElement();
+                if (element) element.style.cursor = 'grab';
                 
                 // Добавляем обработчик начала перетаскивания
                 marker.on('mousedown', function(e) {
@@ -3056,7 +3328,7 @@
             }
             
             // Находим ближайший узел графа
-            const nearestNode = findNearestGraphNode(mouseCoords, 10);
+            const nearestNode = findNearestGraphNode(mouseCoords, 15); // Увеличен радиус поиска
             
             if (nearestNode) {
                 // Обновляем направляющую линию
@@ -3097,7 +3369,7 @@
             const mouseCoords = [point.lng, point.lat];
             
             // Находим ближайший узел графа
-            const nearestNode = findNearestGraphNode(mouseCoords, 10);
+            const nearestNode = findNearestGraphNode(mouseCoords, 15); // Увеличен радиус поиска
             
             if (nearestNode) {
                 // Перемещаем точку на ближайший узел
@@ -3133,7 +3405,7 @@
             finishDragging();
         }
         
-        function findNearestGraphNode(coords, maxDistance = 10) {
+        function findNearestGraphNode(coords, maxDistance = 15) { // Увеличен максимальный радиус
             let nearest = null;
             let minDist = Infinity;
             
@@ -3153,7 +3425,7 @@
         function calculateDragRadius() {
             // Радиус зависит от текущего зума
             const zoom = map.getZoom();
-            return Math.max(2, 10 - zoom); // Больше зум - меньше радиус
+            return Math.max(3, 15 - zoom); // Больше зум - меньше радиус
         }
         
         function finishDragging() {
@@ -3531,6 +3803,96 @@
             localStorage.setItem('userPoints', JSON.stringify(userPointsData));
         }
         
+        // ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ РЕЖИМА МЕТОК ====================
+        function toggleUserPointsLayer() {
+            const btn = document.getElementById('points-layer-btn');
+            const userPointsPanel = document.getElementById('user-points-panel');
+            
+            if (!userPointsLayerVisible) {
+                // Включаем режим просмотра пользовательских меток
+                userPointsLayerVisible = true;
+                isUserPointsMode = false;
+                isEditMode = false;
+                selectedPointIndex = null;
+                btn.classList.add('active');
+                
+                // УСТАНАВЛИВАЕМ ФЛАГ ЧТО ОКНО НЕ ДОЛЖНО ЗАКРЫВАТЬСЯ ПРИ СДВИГЕ КАРТЫ
+                userPointsPanelFixed = true;
+                userPointsPanel.classList.add('user-points-panel-fixed');
+                
+                // Показываем окно с метками
+                userPointsPanel.style.display = 'block';
+                
+                // ОТКЛЮЧАЕМ ВОЗМОЖНОСТЬ ПОСТРОЕНИЯ МАРШРУТА
+                map.off('click', handleMapClick);
+                document.getElementById('lock-btn').disabled = true;
+                document.getElementById('lock-btn-google').disabled = true;
+                
+                // Сбрасываем режим добавления и редактирования меток
+                const addPointBtn = document.getElementById('add-point-btn');
+                const editBtn = document.getElementById('edit-points-btn');
+                addPointBtn.classList.remove('active');
+                editBtn.classList.remove('active');
+                document.getElementById('map').classList.remove('add-point-cursor');
+                
+                // ПОКАЗЫВАЕМ все дополнительные кнопки
+                document.getElementById('add-point-btn').style.display = 'flex';
+                document.getElementById('edit-points-btn').style.display = 'flex';
+                document.getElementById('delete-point-btn').style.display = 'none';
+                document.getElementById('delete-all-points-btn').style.display = 'flex';
+                document.getElementById('points-controls-expanded').classList.add('active');
+                
+                loadUserPoints();
+                displayUserPoints();
+                
+                document.getElementById('status').textContent = 'Режим просмотра пользовательских меток. Используйте кнопки для управления.';
+                
+            } else {
+                // Выключаем режим просмотра пользовательских меток
+                userPointsLayerVisible = false;
+                isUserPointsMode = false;
+                isEditMode = false;
+                selectedPointIndex = null;
+                btn.classList.remove('active');
+                
+                // СНИМАЕМ ФЛАГ ФИКСАЦИИ
+                userPointsPanelFixed = false;
+                userPointsPanel.classList.remove('user-points-panel-fixed');
+                
+                // Скрываем окно с метками
+                userPointsPanel.style.display = 'none';
+                
+                // ВКЛЮЧАЕМ ВОЗМОЖНОСТЬ ПОСТРОЕНИЯ МАРШРУТА (если не Google карты и не заблокировано)
+                if (currentMapType !== 'google-satellite' && !routeLocked) {
+                    map.on('click', handleMapClick);
+                    document.getElementById('lock-btn').disabled = false;
+                }
+                
+                // Сбрасываем режим добавления и редактирования меток
+                const addPointBtn = document.getElementById('add-point-btn');
+                const editBtn = document.getElementById('edit-points-btn');
+                addPointBtn.classList.remove('active');
+                editBtn.classList.remove('active');
+                document.getElementById('map').classList.remove('add-point-cursor');
+                
+                // СКРЫВАЕМ дополнительные кнопки
+                document.getElementById('add-point-btn').style.display = 'none';
+                document.getElementById('edit-points-btn').style.display = 'none';
+                document.getElementById('delete-point-btn').style.display = 'none';
+                document.getElementById('delete-all-points-btn').style.display = 'none';
+                document.getElementById('points-controls-expanded').classList.remove('active');
+                
+                if (userPointsLayer) {
+                    map.removeLayer(userPointsLayer);
+                    userPointsLayer = null;
+                    userPointMarkers = [];
+                    userPointLabels = [];
+                }
+                
+                document.getElementById('status').textContent = 'Готов к построению маршрута';
+            }
+        }
+        
         // ==================== ИЗМЕНЕННАЯ ФУНКЦИЯ ДЛЯ АКТИВАЦИИ РЕЖИМА ДОБАВЛЕНИЯ МЕТОК ====================
         function startAddPointMode() {
             console.log('Активация режима добавления метки');
@@ -3569,7 +3931,6 @@
                 }
             }
         }
-        
         
         // ==================== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ РЕЖИМА РЕДАКТИРОВАНИЯ ====================
         function startEditMode() {
@@ -3619,82 +3980,6 @@
                 updateMarkersForEditMode();
                 
                 document.getElementById('status').textContent = 'Режим просмотра пользовательских меток. Используйте кнопки для управления.';
-            }
-        }
-        
-        function toggleUserPointsLayer() {
-            const btn = document.getElementById('points-layer-btn');
-            
-            if (!userPointsLayerVisible) {
-                // Включаем режим просмотра пользовательских меток
-                userPointsLayerVisible = true;
-                isUserPointsMode = false;
-                isEditMode = false;
-                selectedPointIndex = null;
-                btn.classList.add('active');
-                
-                // ОТКЛЮЧАЕМ ВОЗМОЖНОСТЬ ПОСТРОЕНИЯ МАРШРУТА
-                map.off('click', handleMapClick);
-                document.getElementById('lock-btn').disabled = true;
-                document.getElementById('lock-btn-google').disabled = true;
-                
-                // Сбрасываем режим добавления и редактирования меток
-                const addPointBtn = document.getElementById('add-point-btn');
-                const editBtn = document.getElementById('edit-points-btn');
-                addPointBtn.classList.remove('active');
-                editBtn.classList.remove('active');
-                document.getElementById('map').classList.remove('add-point-cursor');
-                
-                // ПОКАЗЫВАЕМ все дополнительные кнопки
-                document.getElementById('add-point-btn').style.display = 'flex';
-                document.getElementById('edit-points-btn').style.display = 'flex';
-                document.getElementById('delete-point-btn').style.display = 'none';
-                document.getElementById('delete-all-points-btn').style.display = 'flex';
-                document.getElementById('points-controls-expanded').classList.add('active');
-                
-                loadUserPoints();
-                displayUserPoints();
-                
-                document.getElementById('status').textContent = 'Режим просмотра пользовательских меток. Используйте кнопки для управления.';
-                
-            } else {
-                // Выключаем режим просмотра пользовательских меток
-                userPointsLayerVisible = false;
-                isUserPointsMode = false;
-                isEditMode = false;
-                selectedPointIndex = null;
-                btn.classList.remove('active');
-                
-                // ВКЛЮЧАЕМ ВОЗМОЖНОСТЬ ПОСТРОЕНИЯ МАРШРУТА (если не Google карты и не заблокировано)
-                map.off('click', handleMapClick); // Сначала снимаем все обработчики
-                if (currentMapType !== 'google-satellite' && !routeLocked) {
-                    map.on('click', handleMapClick);
-                }
-                document.getElementById('lock-btn').disabled = false;
-                document.getElementById('lock-btn-google').disabled = false;
-                
-                // Сбрасываем режим добавления и редактирования меток
-                const addPointBtn = document.getElementById('add-point-btn');
-                const editBtn = document.getElementById('edit-points-btn');
-                addPointBtn.classList.remove('active');
-                editBtn.classList.remove('active');
-                document.getElementById('map').classList.remove('add-point-cursor');
-                
-                // СКРЫВАЕМ дополнительные кнопки
-                document.getElementById('add-point-btn').style.display = 'none';
-                document.getElementById('edit-points-btn').style.display = 'none';
-                document.getElementById('delete-point-btn').style.display = 'none';
-                document.getElementById('delete-all-points-btn').style.display = 'none';
-                document.getElementById('points-controls-expanded').classList.remove('active');
-                
-                if (userPointsLayer) {
-                    map.removeLayer(userPointsLayer);
-                    userPointsLayer = null;
-                    userPointMarkers = [];
-                    userPointLabels = [];
-                }
-                
-                document.getElementById('status').textContent = 'Готов к построению маршрута';
             }
         }
         
@@ -4031,20 +4316,6 @@
         }
         
         // ==================== ФУНКЦИИ ДЛЯ ОКНА ПРОСМОТРА МЕТОК ====================
-        function toggleUserPointsPanel() {
-            const panel = document.getElementById('user-points-panel');
-            const btn = document.getElementById('toggle-user-points-btn');
-            
-            if (panel.style.display === 'block') {
-                panel.style.display = 'none';
-                btn.textContent = '📌 Мои метки';
-            } else {
-                updateUserPointsList();
-                panel.style.display = 'block';
-                btn.textContent = '👁️ Мои метки';
-            }
-        }
-        
         function updateUserPointsList() {
             const list = document.getElementById('user-points-list');
             const stats = document.querySelector('.user-points-stats .count');
@@ -4086,23 +4357,21 @@
                         latlng = [coords[1], coords[0]];
                     }
                     
+                    // Правильное позиционирование для Google карт с зумом 20
+                    let targetZoom;
+                    if (currentMapType === 'google-satellite') {
+                        targetZoom = 20; // Увеличенный зум для Google карт
+                    } else {
+                        targetZoom = 3; // Фиксированный зум для базовых карт
+                    }
+                    
                     // Плавный переход к точке
-                    map.flyTo(latlng, 3, {
+                    map.flyTo(latlng, targetZoom, {
                         duration: 1.5,
                         easeLinearity: 0.25
                     });
                 });
             });
-        }
-        
-        function updatePointsButtonVisibility() {
-            const btn = document.getElementById('toggle-user-points-btn');
-            if (userPointsData.features.length > 0) {
-                btn.style.display = 'block';
-            } else {
-                btn.style.display = 'none';
-                document.getElementById('user-points-panel').style.display = 'none';
-            }
         }
         
         // ==================== УЛУЧШЕННЫЙ ПОИСК ТОЧЕК ====================
@@ -4171,7 +4440,7 @@
                         // Сохраняем текущую позицию для плавного перехода
                         const currentCenter = map.getCenter();
                         const currentZoom = map.getZoom();
-                        const targetZoom = currentMapType === 'google-satellite' ? 18 : 2;
+                        const targetZoom = currentMapType === 'google-satellite' ? 20 : 2; // Фиксированный зум 20 для Google карт
                         
                         // Плавный переход к точке с увеличением
                         map.flyTo([targetLat, targetLng], targetZoom, {
@@ -4291,8 +4560,16 @@
                 latlng = [y, x];
             }
             
+            // Правильное позиционирование для Google карт
+            let targetZoom;
+            if (currentMapType === 'google-satellite') {
+                targetZoom = 20; // Увеличенный зум для Google карт
+            } else {
+                targetZoom = 0;
+            }
+            
             // Плавный переход к точке
-            map.flyTo(latlng, currentMapType === 'google-satellite' ? 18 : 0, {
+            map.flyTo(latlng, targetZoom, {
                 duration: 2.5,
                 easeLinearity: 0.25
             });
@@ -4376,7 +4653,7 @@
                             fillColor: fillColor,
                             weight: 2,
                             fillOpacity: 1,
-                            className: 'route-point-marker'
+                            className: 'route-point-marker route-point-marker-enlarged'
                         }).addTo(map);
                         pointMarkers.push(marker);
                     });
@@ -4446,8 +4723,6 @@
                             
                             // Меняем курсор
                             document.getElementById('map').style.cursor = 'pointer';
-                            document.getElementById('status').textContent = 
-                                'Кликните для добавления промежуточной точки в маршрут';
                         } else {
                             // Обновляем положение подсветки
                             hoverSegmentLine.setLatLngs([
@@ -4465,8 +4740,13 @@
                     hoverSegmentLine = null;
                     document.getElementById('map').style.cursor = '';
                     
+                    // ВОССТАНАВЛИВАЕМ СООБЩЕНИЕ В СТАТУСЕ ТОЛЬКО ЕСЛИ ЕСТЬ ТОЧКИ
                     if (selectedPoints.length === 0) {
                         document.getElementById('status').textContent = 'Готов к построению маршрута. Кликните на схему для выбора точек.';
+                    } else if (selectedPoints.length === 1) {
+                        document.getElementById('status').textContent = 'Выбрана первая точка. Выберите вторую.';
+                    } else {
+                        document.getElementById('status').textContent = 'Маршрут построен. Для добавления точек кликните на маршрут.';
                     }
                 }
             });
@@ -4481,7 +4761,39 @@
             });
         }
         
-        // ==================== ПЕРЕКЛЮЧЕНИЕ КАРТ ====================
+        // ==================== ФУНКЦИИ ДЛЯ ПЕРЕКЛЮЧЕНИЯ КАРТ ====================
+        function setupMapClickHandler() {
+            map.off('click', handleMapClick); // Сначала снимаем все обработчики
+            
+            if (currentMapType !== 'google-satellite' && !routeLocked) {
+                map.on('click', handleMapClick);
+            }
+        }
+        
+        function rebuildRouteAfterMapSwitch() {
+            if (selectedPoints.length < 2) return;
+            
+            // Очищаем старые маркеры
+            clearAllRouteMarkers();
+            
+            // Восстанавливаем маркеры точек
+            selectedPoints.forEach((pt, idx) => {
+                const fillColor = idx === 0 ? 'green' : idx === selectedPoints.length - 1 ? 'blue' : 'red';
+                const marker = L.circle([pt[1], pt[0]], {
+                    radius: 3,
+                    color: 'white',
+                    fillColor: fillColor,
+                    weight: 2,
+                    fillOpacity: 1,
+                    className: 'route-point-marker route-point-marker-enlarged'
+                }).addTo(map);
+                pointMarkers.push(marker);
+            });
+            
+            // Перестраиваем маршрут
+            buildFullRoute();
+        }
+        
         function switchMapLayer(mapType) {
             if (currentMapType === mapType) return;
             currentMapType = mapType;
@@ -4493,7 +4805,11 @@
             const wasAllEdgesVisible = allEdgesLayerVisible;
             const wasDangerVisible = dangerLayerVisible;
             const wasEditMode = isEditMode;
-            const wasAddMode = isUserPointsMode; // Сохраняем состояние режима добавления
+            const wasAddMode = isUserPointsMode;
+            // Сохраняем состояние маршрута
+            const savedSelectedPoints = [...selectedPoints]; // Сохраняем точки маршрута
+            const savedPointMarkers = [...pointMarkers]; // Сохраняем маркеры
+            const savedFullRoutePath = [...fullRoutePath]; // Сохраняем путь маршрута
             
             if (entranceMarker) map.removeLayer(entranceMarker);
             if (currentImageOverlay) map.removeLayer(currentImageOverlay);
@@ -4503,6 +4819,12 @@
             if (allEdgesLayer) map.removeLayer(allEdgesLayer);
             if (dangerLayer) map.removeLayer(dangerLayer);
             if (routeLayer) map.removeLayer(routeLayer);
+            
+            // Удаляем метку длины маршрута
+            if (routeLengthLabelMarker) {
+                map.removeLayer(routeLengthLabelMarker);
+                routeLengthLabelMarker = null;
+            }
             
             entranceMarker = currentImageOverlay = googleSatelliteLayer = null;
 
@@ -4515,7 +4837,7 @@
                     maxZoom: 21,
                     minZoom: 10,
                     subdomains: ['0','1','2','3'],
-                    attribution: false // Отключаем аттрибуцию
+                    attribution: false
                 }).addTo(map);
 
                 setTimeout(() => {
@@ -4531,17 +4853,21 @@
                     if (wasAllEdgesVisible) toggleAllEdgesLayer();
                     if (wasDangerVisible) toggleDangerLayer();
                     if (wasAddMode) {
-                        // Восстанавливаем режим добавления меток
                         isUserPointsMode = true;
                         document.getElementById('add-point-btn').classList.add('active');
                         document.getElementById('map').classList.add('add-point-cursor');
                     }
                     if (wasEditMode) {
-                        // Восстанавливаем режим редактирования
                         isEditMode = true;
                         document.getElementById('edit-points-btn').classList.add('active');
                         document.getElementById('map').classList.add('add-point-cursor');
                     }
+                    
+                    // Снимаем все обработчики кликов для Google карт
+                    map.off('click', handleMapClick);
+                    // На Google картах не строим маршруты
+                    document.getElementById('lock-btn-google').disabled = true;
+                    document.getElementById('lock-btn').disabled = true;
                     
                     setTimeout(() => updateMarkersVisibilityForCurrentMap(), 100);
                     hideLoadingOverlay();
@@ -4562,23 +4888,35 @@
                     const centerY = (mapBounds[0][0] + mapBounds[1][0]) / 2;
                     map.setView([centerY, centerX], -1);
 
+                    // Восстанавливаем маршрут если он был
+                    selectedPoints = [...savedSelectedPoints];
+                    pointMarkers = [...savedPointMarkers];
+                    fullRoutePath = [...savedFullRoutePath];
+                    
+                    if (selectedPoints.length > 1) {
+                        // Перестраиваем маршрут
+                        rebuildRouteAfterMapSwitch();
+                    }
+                    
                     if (wasKpVisible) toggleKPLayer();
                     if (wasUserPointsVisible && userPointsData.features.length > 0) displayUserPoints();
                     if (wasAllEdgesVisible) toggleAllEdgesLayer();
                     if (wasDangerVisible) toggleDangerLayer();
-                    if (selectedPoints.length > 1) buildFullRoute();
+                    
                     if (wasEditMode && wasUserPointsVisible) {
-                        // Восстанавливаем режим редактирования
                         isEditMode = true;
                         document.getElementById('edit-points-btn').classList.add('active');
                         document.getElementById('map').classList.add('add-point-cursor');
                     }
                     if (wasAddMode) {
-                        // Восстанавливаем режим добавления меток
                         isUserPointsMode = true;
                         document.getElementById('add-point-btn').classList.add('active');
                         document.getElementById('map').classList.add('add-point-cursor');
                     }
+                    
+                    // Восстанавливаем обработчик кликов для базовых карт если маршрут не заблокирован
+                    setupMapClickHandler();
+                    document.getElementById('lock-btn').disabled = false;
                     
                     setTimeout(() => updateMarkersVisibilityForCurrentMap(), 100);
                     hideLoadingOverlay();
@@ -4586,9 +4924,55 @@
             }
         }
         
+        // ==================== ПРЕДУПРЕЖДЕНИЕ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ====================
+        function checkMobileDevice() {
+            // Проверяем, является ли устройство мобильным
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // Показываем предупреждение только на мобильных устройствах и при первом открытии
+            if ((isMobile || isTouchDevice) && !mobileWarningShown) {
+                const warningElement = document.getElementById('mobile-warning');
+                const timerElement = document.getElementById('timer-count');
+                const closeButton = document.getElementById('mobile-warning-close');
+                
+                warningElement.style.display = 'flex';
+                mobileWarningShown = true;
+                
+                // Таймер обратного отсчета
+                let secondsLeft = 10;
+                const timerInterval = setInterval(() => {
+                    secondsLeft--;
+                    timerElement.textContent = secondsLeft;
+                    
+                    if (secondsLeft <= 0) {
+                        clearInterval(timerInterval);
+                        warningElement.style.display = 'none';
+                    }
+                }, 1000);
+                
+                // Закрытие по кнопке
+                closeButton.addEventListener('click', () => {
+                    clearInterval(timerInterval);
+                    warningElement.style.display = 'none';
+                });
+                
+                // Закрытие по клику вне окна
+                warningElement.addEventListener('click', (e) => {
+                    if (e.target.id === 'mobile-warning') {
+                        clearInterval(timerInterval);
+                        warningElement.style.display = 'none';
+                    }
+                });
+            }
+        }
+        
         // ==================== ИНИЦИАЛИЗАЦИЯ ====================
         async function initializeMap() {
             document.getElementById('status').textContent = 'Загрузка данных карты...';
+            
+            // Проверяем мобильное устройство
+            checkMobileDevice();
             
             try {
                 const fileChecks = await Promise.allSettled(
@@ -4623,11 +5007,11 @@
                 loadUserPoints();
                 updateControlsVisibility();
                 
-                // Инициализируем окно просмотра меток
-                updatePointsButtonVisibility();
-                
                 // Настраиваем hover для сегментов маршрута
                 setupRouteSegmentHover();
+                
+                // Настраиваем обработчик кликов
+                setupMapClickHandler();
                 
                 document.getElementById('status').textContent = 'Готов к построению маршрута. Кликните на схему для выбора точек.';
                 
@@ -4650,7 +5034,7 @@
                 const menuBtn = document.getElementById('menu-button');
                 const searchPanel = document.getElementById('search-panel');
                 const userPointsPanel = document.getElementById('user-points-panel');
-                const toggleUserPointsBtn = document.getElementById('toggle-user-points-btn');
+                const pointsControlsContainer = document.getElementById('points-controls-container');
                 
                 if (menuOpen && !dropdown.contains(e.target) && !menuBtn.contains(e.target)) {
                     menuOpen = false;
@@ -4661,9 +5045,12 @@
                     toggleSearchPanel();
                 }
                 
+                // ИСПРАВЛЕННАЯ ЛОГИКА: окно меток закрывается только при клике на кнопку "Закрыть" или выключении режима
+                // Не закрываем окно при клике вне его, если режим меток активен
+                // Это решает проблему случайного закрытия при сдвиге карты
                 if (userPointsPanel && userPointsPanel.style.display === 'block' && 
-                    !userPointsPanel.contains(e.target) && e.target !== toggleUserPointsBtn) {
-                    toggleUserPointsPanel();
+                    userPointsPanel.contains(e.target) && e.target.id === 'close-points-panel') {
+                    toggleUserPointsLayer(); // Скрываем окно только при клике на кнопку "Закрыть"
                 }
             });
             
@@ -4729,14 +5116,16 @@
             setupButton('show-disclaimer', () => document.getElementById('disclaimer-overlay').style.display = 'flex');
             setupButton('close-disclaimer', () => document.getElementById('disclaimer-overlay').style.display = 'none');
             setupButton('search-points-btn', showSearchPointsPopup);
-            setupButton('toggle-user-points-btn', toggleUserPointsPanel);
-            setupButton('close-points-panel', toggleUserPointsPanel);
+            setupButton('close-points-panel', () => {
+                document.getElementById('user-points-panel').style.display = 'none';
+                toggleUserPointsLayer();
+            });
             
             const toggleLock = () => {
                 routeLocked = !routeLocked;
                 const lockBtn = document.getElementById('lock-btn');
                 const lockBtnGoogle = document.getElementById('lock-btn-google');
-                lockBtn.textContent = lockBtnGoogle.textContent = routeLocked ? '🔒' : '🔓';
+                lockBtn.textContent = routeLocked ? '🔒' : '🔓';
                 
                 if (routeLocked) {
                     map.off('click', handleMapClick);
@@ -4746,9 +5135,9 @@
                         document.getElementById('status').textContent = 'Построение маршрута заблокировано';
                     }
                 } else {
-                    // На Google картах не строим маршруты
+                    // Настраиваем обработчик кликов в зависимости от типа карты
+                    setupMapClickHandler();
                     if (currentMapType !== 'google-satellite') {
-                        map.on('click', handleMapClick);
                         document.getElementById('status').textContent = 'Готов к построению маршрута';
                     }
                 }
@@ -4783,11 +5172,6 @@
                     document.getElementById('disclaimer-overlay').style.display = 'none';
                 }
             });
-            
-            // На Google картах не строим маршруты
-            if (currentMapType !== 'google-satellite') {
-                map.on('click', handleMapClick);
-            }
             
             document.getElementById('route-file-input').addEventListener('change', (e) => {
                 if (e.target.files.length > 0) loadRouteFromFile(e.target.files[0]);
